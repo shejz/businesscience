@@ -1,6 +1,4 @@
-### [View Website](https://shejz.github.io/businesscience/)
-
-## **Business Science**
+## [Business Science](https://shejz.github.io/businesscience/)
 
 Data Science has a wide variety of applications. It is used in several fields like in Business, various industries are using Data Science to boost their production, make smarter decisions and develop innovative products that are tailored for customer needs. Here are some of my case studies that will brief you how data science is used in different business sectors.
 
