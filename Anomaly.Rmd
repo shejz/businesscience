@@ -1,0 +1,358 @@
+---
+title: "Credit Card Anomaly Detection"
+subtitle: "H2O Isolation Forest"
+output:
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3
+    number_sections: false
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    eval = TRUE,
+    warning = FALSE,
+    message = FALSE,
+    cache= TRUE,
+    fig.height = 5,
+    fig.width  = 8
+    )
+```
+
+## **Credit Card Fraud Detection**
+
+Anonymized credit card transactions labeled as fraudulent or genuine.
+
+Fraud is a growing concern for companies all over the globe. While there are many ways to fight and identify fraud, one method that is gaining increased attention is the use of **unsupervised** learning methods to detect anomalies within customer or transactions data. By analyzing customers or transactions relative to each other, we're able to spot unusual observations.
+
+## **Unsupervised methods**
+
+These methods are referred to as unsupervised because there is no historical information about fraudulent cases that is used to train the model.Instead, **unsupervised methods** are used to find anomalies by locating observations within the data set that are separated from other heavily populated areas of the data set.
+
+The assumption behind this is that fraudulent behavior can often appear as anomalous within a data set. It should be noted that just because an observation is anomalous, it doesn't mean it is fraudulent or of interest to the user. Similarly, fraudulent behavior can be disguised to be hidden within more regular types of behavior. However, without labeled training data, unsupervised learning is a good method to use to begin to identify deviant accounts or transactions.
+
+### **Why might want to use unsupervised methods instead of supervised methods**.
+
+Trying to find new types of fraud that may not have been captured within the historical data. Fraud patterns can evolve or change and so it is important to constantly be searching for ways to identify new patterns as early as possible. If purely relying on supervised models built with historical data, these new patterns can be missed. However, since the unsupervised methods are not limited by the patterns present in the historical data, **they can potentially identify these new patterns as they may represent behavior that is unusual or anomalous**.
+
+### **What is an anomaly and how to identify it?**
+
+-   Anomalies are data points that are few and different. It has a pattern that appears to have different characteristics from a normal data point.
+-   Anomaly detection is a common data science problem where the goal is to identify odd or suspicious observations, events, or items in our data that might be indicative of some issues in our data collection process
+
+**Three fundamental approaches to detect anomalies are based on**:
+
+-   Density
+-   Distance
+-   Isolation.
+
+**The real challenge in anomaly detection is to construct the right data model to separate outliers from noise and normal data**.
+
+> **Anomaly == Outlier == Deviant or Unsual Data Point**
+
+```{r, echo=FALSE}
+
+# Load the following libraries.
+library(h2o)
+library(tidyverse)
+library(tidyquant)
+library(yardstick)  # To calculate model metrics
+library(vroom)      # Very fast loading for big dataset
+library(plotly)     # Interactive visualization
+library(ggthemes)
+library(cowplot)
+```
+
+## **Loading the Data**
+
+Before we dive into the anomaly detection, let's initialize the h2o cluster and load our data in. We will be using the [credit card data set](%22https://www.kaggle.com/mlg-ulb/creditcardfraud%22), which contains information on various properties of credit card transactions. There are 492 fraudulent and 284,807 genuine transactions, which makes the target class highly imbalanced. We will not use the label during the anomaly detection modeling, but we will use it during the evaluation of our anomaly detection.
+
+```{r}
+credit_card_tbl <- vroom("data/creditcard.csv")
+```
+
+## **Exploratory Data Analysis**
+
+Exploratory Data Analysis is an initial process of analysis, in which you can summarize characteristics of data such as pattern, trends, outliers, and hypothesis testing using descriptive statistics and visualization.
+
+```{r, echo=FALSE, eval=FALSE}
+# Give names for the different education levels.
+credit_card_tbl$Classes <- credit_card_tbl %>% 
+    mutate(Class = Class %>% fct_relevel("Genuine", "Fraud" ))
+                                  
+```
+
+### **Credit card transactions(Fraud vs Non-fraud)**
+
+```{r, eval=FALSE}
+fraud_class <- credit_card_tbl %>% 
+  group_by(Classes) %>% 
+  summarize(Count = n()) %>%
+  ggplot(aes(x=Classes, y=Count, fill = Classes)) +
+  geom_col() +
+  theme_tufte() +
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) +
+  geom_text(aes(label = Count), size = 3, vjust = 1.2, color = "#FFFFFF") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5)) +
+  labs(title="Credit card transactions", x = "Classes", y = "Count")
+
+fraud_class_percentage <- credit_card_tbl %>% 
+  group_by(Classes) %>% 
+  summarise(Count=n()) %>% 
+  mutate(percent = round(prop.table(Count),2) * 100) %>%
+  ggplot(aes("", Classes, fill = Classes)) +
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  theme_tufte() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  coord_polar("y", start = 0) +
+  ggtitle("Credit card transactions(%)") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5)) +
+  geom_text(aes(label = paste0(round(percent, 1), "%")), position = position_stack(vjust = 0.5), color = "white")
+  
+plot_grid(fraud_class, fraud_class_percentage, align="h", ncol=2)
+```
+
+### **Amount spend vs Fraud**
+
+```{r}
+g <- credit_card_tbl %>%
+    select(Amount, Class) %>%
+    ggplot(aes(Amount, fill = as.factor(Class))) +
+    # geom_histogram() +
+    geom_density(alpha = 0.3) +
+    facet_wrap(~ Class, scales = "free_y", ncol = 1) +
+    scale_x_log10(label = scales::dollar_format()) +
+    scale_fill_tq() +
+    theme_tq() +
+    labs(title = "Fraud by Amount Spent", 
+         fill = "Fraud")
+
+ggplotly(g)
+```
+
+## **Isolation Forest**
+
+Let's understand in detail what isolation forest is and how it can be helpful in identifying the anomaly.
+
+The term **isolation** means `separating an instance from the rest of the instances`. Since anomalies are "few and different" and therefore they are more susceptible to isolation.
+
+-   Isolation Forest is an outlier detection technique that identifies anomalies instead of normal observations
+-   It identifies anomalies by isolating outliers in the data. Isolation forest exists under an unsupervised machine learning algorithm.and therefore it does not need labels to identify the outlier/anomaly.
+
+**Advantages of using Isolation Forest**:
+
+-   One of the advantages of using the isolation forest is that it not only detects anomalies faster but also requires less memory compared to other anomaly detection algorithms.
+-   It can be scaled up to handle large, high-dimensional datasets.
+
+First, we need to initialize the Java Virtual Machine (JVM) that H2O uses locally.
+
+```{r, results='hide'}
+h2o.init()
+```
+
+Next, we change our data to an h2o object that the package can interpret.
+
+```{r, results='hide'}
+credit_card_h2o <- as.h2o(credit_card_tbl)
+```
+
+```{r}
+target <- "Class"
+predictors <- setdiff(names(credit_card_h2o), target)
+
+# Let’s train isolation forest. 
+isoforest <- h2o.isolationForest(
+    training_frame = credit_card_h2o,
+    x      = predictors,
+    ntrees = 100, 
+    seed   = 1234
+)
+isoforest
+```
+
+## **Prediction**
+
+We can see that the prediction h2o frame contains two columns:
+
+-   **predict**: The likelihood of the observations being outlier.
+-   **mean\_length**: Showing the average number of splits across all trees to isolate the observation.
+
+```{r}
+predictions <- predict(isoforest, newdata = credit_card_h2o)
+predictions
+```
+
+## **Metrics**
+
+**Predicting Anomalies using Quantile**
+
+How do we go from the average number of splits / anomaly score to the actual predictions? Using a threshold If we have an idea about the relative number of outliers in our dataset, we can find the corresponding quantile value of the score and use it as a threshold for our predictions.
+
+We can see that most of the observations are low percentage likelihood, but there are some with high likelihood and that is anomaly.
+
+```{r}
+h2o.hist(predictions[,"predict"])
+```
+
+Most of the observations are around 7 trees / splits to be able separate the data points.
+
+```{r}
+h2o.hist(predictions[,"mean_length"])
+```
+
+```{r}
+quantile <- h2o.quantile(predictions, probs = 0.99)
+quantile
+
+thresh <- quantile["predictQuantiles"]
+
+predictions$outlier <- predictions$predict > thresh %>% as.numeric()
+predictions$class <- credit_card_h2o$Class
+
+predictions
+```
+
+```{r}
+predictions_tbl <- as_tibble(predictions) %>%
+    mutate(class = factor(class, levels = c("1","0"))) %>%
+    mutate(outlier = factor(outlier,levels = c("1","0")))
+predictions_tbl
+```
+
+### **Confusion Matrix**
+
+We have 300 anomalies which are considered as Fraud.
+
+```{r}
+predictions_tbl %>% conf_mat(class, outlier)
+```
+
+### **ROC Curve**
+
+```{r}
+auc <- predictions_tbl %>% 
+    roc_auc(class, predict) %>% 
+    pull(.estimate) %>%
+    round(3)
+
+predictions_tbl %>% 
+    roc_curve(class, predict) %>%
+    ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+    geom_path(color = palette_light()[1], size = 2) +
+    geom_abline(lty = 3, size = 1) +
+    theme_tq() +
+    labs(title = str_glue("ROC AUC: {auc}"), 
+         subtitle = "Using H2O Isolation Forest")
+```
+
+```{r, echo=FALSE, eval=FALSE}
+predictions_tbl %>% pr_auc(class, predict)
+```
+
+## **Stabilize Predictions**
+
+**Stabilize predictions to increase anomaly detection performance**
+
+-   Run algorithm multiple times, change seed parameter and average the results to stabilize..
+-   Adjust quantile / threshold based on visualizing outliers.
+
+```{r, results='hide'}
+# Repeatable Prediction Function 
+iso_forest <- function(seed) {
+    
+    target <- "Class"
+    predictors <- setdiff(names(credit_card_h2o), target)
+    
+    isoforest <- h2o.isolationForest(
+        training_frame = credit_card_h2o,
+        x      = predictors,
+        ntrees = 100, 
+        seed   = seed
+    )
+    
+    predictions <- predict(isoforest, newdata = credit_card_h2o)
+    
+    quantile <- h2o.quantile(predictions, probs = 0.99)
+    
+    thresh <- quantile["predictQuantiles"]
+    
+    # predictions$outlier <- predictions$predict > thresh %>% as.numeric()
+    # predictions$class <- credit_card_h2o$Class
+    
+    predictions_tbl <- as_tibble(predictions) %>%
+        # mutate(class = as.factor(class)) %>%
+        mutate(row = row_number())
+    predictions_tbl
+    
+}
+```
+
+```{r}
+iso_forest(123)
+```
+
+### **Map to multiple seeds**
+
+```{r, results='hide'}
+multiple_predictions_tbl <- tibble(seed = c(158, 8546, 4593)) %>%
+    mutate(predictions = map(seed, iso_forest))
+```
+
+```{r}
+multiple_predictions_tbl
+```
+
+
+### **Precision vs Recall AUC**
+
+```{r}
+# Calculate average predictions
+stabilized_predictions_tbl <- multiple_predictions_tbl %>% 
+    unnest(predictions) %>%
+    select(row, seed, predict) %>%
+    
+    # Calculate stabilized predictions
+    group_by(row) %>%
+    summarize(mean_predict = mean(predict)) %>%
+    ungroup() %>%
+    
+    # Combine with original data & important columns
+    bind_cols(
+        credit_card_tbl
+    ) %>% 
+    select(row, mean_predict, Time, V12, V15, Amount, Class) %>%
+    
+    # Detect Outliers
+    mutate(outlier = ifelse(mean_predict > quantile(mean_predict, probs = 0.99), 1, 0)) %>%
+    mutate(Class = as.factor(Class))
+
+stabilized_predictions_tbl %>% pr_auc(Class, mean_predict)
+
+```
+
+
+```{r}
+stabilized_predictions_tbl %>%
+    ggplot(aes(V12, V15, color = as.factor(outlier))) +
+    geom_point(alpha = 0.2) +
+    theme_tq() +
+    scale_color_tq() +
+    labs(title = "Anomaly Detected?", color = "Is Outlier?")
+
+stabilized_predictions_tbl %>%
+    ggplot(aes(V12, V15, color = as.factor(outlier))) +
+    geom_point(alpha = 0.2) +
+    theme_tq() +
+    scale_color_tq() +
+    labs(title = "Fraud Present?", color = "Is Fraud?")
+
+```
+
+## **Conclusions**
+
+-   Anomalies (Outliers) are more often than not Fraudulent Transactions.
+-   Isolation Forest does a good job at detecting anomalous behaviour.

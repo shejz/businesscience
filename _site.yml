@@ -1,0 +1,17 @@
+name: "Business Science"
+navbar:
+  title: "Business Science"
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Anomaly Detection"
+      href: Anomaly.html
+    - text: "Market Basket Analysis"
+      href: instacart_market_basket_analysis.html
+    - text: "Network Analysis"    
+      href: Customer-Community-Detection.html
+    - text: "Churn"  
+      href: Employee_Attrition.html  
+    - text: "Product Analytics"    
+      href: Bike.html
+output_dir: "docs"

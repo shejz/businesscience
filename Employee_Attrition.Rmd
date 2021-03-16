@@ -1,0 +1,2466 @@
+---
+title: "Employee Churn Analysis"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+      toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    eval = TRUE,
+    warning = FALSE,
+    message = FALSE,
+    fig.height = 5,
+    fig.width  = 8
+    )
+```
+
+## **Overview**
+
+**Analyze employee churn. Find out why employees are leaving the company, and learn to predict who will leave the company**
+
+Employee turnover refers to the gradual loss of employees over a period of time. Acquiring new employees as a replacement has its costs such as hiring costs and training costs. Also, the new employee will take time to learn skills at the similar level of technical or business expertise knowledge of an older employee. Organizations tackle this problem by **applying machine learning techniques to predict employee churn**, which helps them in taking necessary actions.
+
+**Employee turnover (attrition) is a major cost to an organization, and predicting turnover is at the forefront of needs of Human Resources (HR) in many organizations.** 
+
+In Research, it was found that employee churn will be affected by age, tenure, pay, job satisfaction, salary, working conditions, growth potential and employee’s perceptions of fairness. Some other variables such as age, gender, ethnicity, education, and marital status, were essential factors in the prediction of employee churn.
+
+**Attrition can happen for many reasons**:
+
+-   Employees looking for better opportunities.
+-   A negative working environment.
+-   Bad management
+-   Sickness of an employee (or even death)
+-   Excessive working hours
+
+**Increasing customer retention rates could increase profits**.
+
+
+**Structure of the Project:**
+
+-   **Exploratory Data Analysis**: One of the first things in my journey of Data Science, was to always know the story behind the data. What's the point of implementing predictive algorithms if you don't know what your data is about? My philosophy is to "drill down" the data until I find interesting insights that will give me a better understanding of my data.
+
+-   **Recommendations**: What recommendations will I give the organization based on the analysis made with this data. How can the organization `reduce the rate of attrition` inside the company? In my opinion, this is the most important part of the analysis because it gives us a better understanding of what the organization could do to avoid the negative effect of attrition.
+
+-   **Modeling**: Implement a predictive model to determine whether an employee is going to quit or not.
+
+
+## **Exploratory Data Analysis**
+Exploratory Data Analysis is an initial process of analysis, in which you can summarize characteristics of data such as pattern, trends, outliers, and hypothesis testing using descriptive statistics and visualization.
+
+
+```{r, echo=FALSE}
+
+# Load the following libraries and scripts.
+library(tidyverse)
+library(tidyquant)       # Loads tidyverse and several other pkgs 
+library(stringr)
+library(forcats)
+library(readxl)          # Super simple excel reader
+library(DataExplorer)
+library(GGally)
+library(skimr)
+library(recipes)
+library(ggplot2)
+library(cowplot)
+library(gridExtra)
+library(ggthemes)
+library(reshape)
+library(treemapify)
+library(plotrix)
+library(dlookr)
+library(DT)
+library(ggstatsplot)
+library(h2o)            # Professional grade ML pkg
+library(recipes)
+library(fs)
+library(glue)
+library(knitr)          # Explain complex black-box ML models
+library(lime)
+```
+
+
+### Loading Dataset {.tabset .tabset-fade .tabset-pills}
+Let's first load the required HR dataset
+```{r}
+# Load Data
+path_train <- "data/telco_train.xlsx"
+path_test <- "data/telco_test.xlsx"
+path_data_definitions <- "data/telco_data_definitions.xlsx"
+
+train_raw_tbl <- read_excel(path_train, sheet = 1)
+test_raw_tbl <- read_excel(path_test, sheet = 1)
+definitions_raw_tbl <- read_excel(path_data_definitions, sheet = 1, col_names = FALSE)
+
+# Source Scripts ----
+source("scripts/assess_attrition.R")
+
+# Processing Pipeline -----------------------------------------------------
+source("scripts/data_processing_pipeline.R")
+train_readable_tbl <- process_hr_data_readable(train_raw_tbl, definitions_raw_tbl)
+test_readable_tbl  <- process_hr_data_readable(test_raw_tbl, definitions_raw_tbl)
+
+# Correlation Plots
+source("scripts/plot_cor.R")
+```
+
+#### Description
+
+<br>
+The variable names and class types are the same as above, with a total of 1,250 observations and 35 variables. A brief description of the variable follows.
+
+Variable name           | Description
+------------------------|----------------------------------------------------------------------------------------------
+Age                     | Age of employee
+Attrition               | Attrition of employee (Yes, No)
+BusinessTravel          | Frequency of business travel (Non-Travel, Travel_Rarely, Travel_Frequently)
+DailyRate               | Amount of money a company has to pay employee to work for them for a day
+Department              | Part of an company that deals with a particular area of work(Research & Development, Sales, Human Resources)
+DistanceFromHome        | Distance between company and home
+Education               | Level of education (1: Below College, 2: College, 3: Bachelor, 4: Master, 5: Doctor)
+EducationField          | Field of Education (Life Sciences, Medical, Human Resources, Technical Degree, Marketing, Other)
+EmployeeCount           | Count of employee (always 1)
+EmployeeNumber          | Number of employee
+EnvironmentSatisfaction | Satisfaction of environment (1: Low, 2: Medium, 3: High, 4: Very High)
+HourlyRate              | Amount of money a company has to pay employee to work for them for an hour
+JobInvolvement          | Level of job involvement (1: Low, 2: Medium, 3: High, 4: Very High)
+JobLevel                | Level of job (1~5)
+JobRole                 | Role of job (Sales Executive, Research Scientist, Laboratory Technician, Manager, Healthcare Representative, Sales Representative, Manufacturing Director, Human Resources, Manager)
+JobSatisfaction         | Satisfaction of job (1: Low, 2: Medium, 3: High, 4: Very High)
+MaritalStatus           | Fact of employee being married or not (Married, Divorced, Single)
+MonthlyIncome           | Income of Month
+MonthlyRate             | Amount of money a company has to pay employee to work for them for a month
+NumCompaniesWorked      | Length of service
+Over18                  | Over 18 years old (Y, N)
+OverTime                | After the usual time needed or expected in a job (Yes, No)
+PercentSalaryHike       | Percent of salary of hike
+PerformanceRating       | Level of performance assessment (1: Low, 2: Good, 3: Excellent, 4: Outstanding)
+RelationshipSatisfaction| Level of relationship satisfaction (1: Low, 2: Medium, 3: High, 4: Very High)
+StandardHours           | Standard work hours (always 80)
+StockOptionLevel        | Stock option level (0~3)
+TotalWorkingYears       | Years of total working
+TrainingTimesLastYear   | Training times of last year(C: Cherbourg, Q: Queenstown, S: Southampton)
+WorkLifeBalance         | Level of work life balance (1: Bad, 2: Good, 3: Better, 4: Best)
+YearsAtCompany          | Years at company
+YearsInCurrentRole      | Years in current role
+YearsSinceLastPromotion | Years since last promotion
+YearsWithCurrManager    | Years with current manager
+
+<br>
+
+#### Structure
+
+**How many columns and observations is there in our dataset?**
+
+The raw data contains `1,250` rows (customers) and `35` columns (features). The **"Attrition"** is the label in our dataset and we would like to find out why employees are leaving the organization!
+
+**We only have two datatypes in this dataset: `factors` and `integers`**
+
+Most features in this dataset are `ordinal` variables which are similar to categorical variables however, ordering of those variables matter. A lot of the variables in this dataset have a range from 1-4 or 1-5, The lower the ordinal variable, the worse it is in this case. For instance, Job Satisfaction 1 = "Low" while 4 = "Very High".
+
+After you have loaded the dataset, you might want to know a little bit more about it. You can check attributes names and datatypes.
+
+Change all character data types to factors. This is needed for H2O. We could make a number of other numeric data that is actually categorical factors, but this tends to increase modeling time and can have little improvement on model performance.
+ 
+```{r, echo=FALSE}
+definitions_tbl <- definitions_raw_tbl %>%
+    fill(`...1`, .direction = "down") %>%
+    filter(!is.na(`...2`)) %>%
+    separate(`...2`, into = c("key", "value"), sep = " '", remove = TRUE) %>%
+    dplyr::rename(column_name = `...1`) %>%
+    mutate(key = as.numeric(key)) %>%
+    mutate(value = value %>% str_replace(pattern = "'", replacement = ""))
+
+definitions_list <- definitions_tbl %>%
+    split(.$column_name) %>%
+    map(~ select(., -column_name)) %>%
+    map(~ mutate(., value = as_factor(value))) 
+
+
+for (i in seq_along(definitions_list)) {
+  list_name <- names(definitions_list)[i]
+  colnames(definitions_list[[i]]) <- c(list_name, paste0(list_name, "_value"))
+}
+
+data_merged_tbl <- list(HR_Data = train_raw_tbl) %>%
+    append(definitions_list, after = 1) %>%
+    reduce(left_join) %>%
+    select(-one_of(names(definitions_list))) %>%
+    set_names(str_replace_all(names(.), pattern = "_value", replacement = "")) %>%
+    select(sort(names(.)))
+
+data_processed_tbl <- data_merged_tbl %>%
+    mutate_if(is.character, as.factor) %>%
+    mutate(
+        BusinessTravel = BusinessTravel %>% fct_relevel("Non-Travel", "Travel_Rarely", "Travel_Frequently"),
+        MaritalStatus  = MaritalStatus %>% fct_relevel("Single", "Married", "Divorced")
+    )
+data_processed_tbl %>% 
+  glimpse()
+```
+
+
+```{r}
+plot_intro(data_processed_tbl)
+```
+
+**Factor Variables**
+
+Let’s take a glimpse at the processed dataset. We can see all of the columns. Note our target (“Attrition”) is the first column.
+
+```{r, fig.width=12}
+data_processed_tbl %>%
+    select_if(is.factor) %>% 
+    map(levels) %>% 
+    glimpse()
+```
+
+
+#### Data
+```{r, echo=FALSE}
+col_order <- c("EmployeeCount","EmployeeNumber", "Attrition", "Department",
+               "JobRole", "JobLevel", "JobInvolvement", "NumCompaniesWorked", 
+               "HourlyRate","DailyRate","MonthlyIncome", "MonthlyRate","StockOptionLevel",
+               "PercentSalaryHike","StandardHours", "OverTime","MaritalStatus","Age","Over18",
+               "Gender","Education","EducationField","EnvironmentSatisfaction","JobSatisfaction",
+               "RelationshipSatisfaction","WorkLifeBalance","DistanceFromHome","PerformanceRating", 
+               "BusinessTravel","TrainingTimesLastYear","YearsAtCompany","YearsInCurrentRole",
+                "YearsSinceLastPromotion" , "YearsWithCurrManager","TotalWorkingYears")
+train_raw_tbl <- train_raw_tbl[,col_order]
+train_raw_tbl %>%
+  datatable(rownames = FALSE,
+             options = list(
+              dom = 'Bfrtip',
+              searching = FALSE,
+              info = FALSE,
+              scrollX = TRUE,
+              scrollCollapse=TRUE))
+```
+
+
+#### Numerical
+Descriptive statistic of numeric variable.
+```{r, echo=FALSE}
+train_raw_tbl %>%
+  describe() %>%
+  select(variable,n,na,mean,sd,se_mean,IQR,skewness,kurtosis,p25,p50,p75) %>%
+  filter(!is.na(skewness)) %>% 
+  arrange(desc(abs(skewness))) %>% 
+  datatable(rownames = FALSE, 
+            colnames = c("Features","Observations","Missing Values","Mean","Standard Devation",
+                         "Standard Error Mean","IQR","Skewness","Kurtosis",
+                          "[Q1]25% percentile","[Median]50% percentile","[Q3]75% percentile"),
+            extensions = c('FixedColumns'),
+            options = list(
+              dom = 'Bfrtip',
+              searching = FALSE,
+              info = FALSE,
+              scrollX = TRUE,
+              scrollCollapse=TRUE,
+              fixedHeader = TRUE,
+              fixedColumns = list(leftColumns = 1))) %>%
+  formatRound(columns = c("mean","sd","se_mean","IQR","skewness","kurtosis","p25","p50","p75"),digits = 2)
+```
+
+#### Categorical
+Data quality of categorical variables.
+```{r, echo=FALSE}
+train_raw_tbl %>% 
+  diagnose_category() %>% 
+  select(-N) %>% 
+  datatable(rownames = FALSE, 
+            options = list(
+                      dom = 'Bfrtip',
+                      searching = FALSE,
+                      info = FALSE,
+                      scrollX = TRUE,
+                      scrollCollapse=TRUE)
+            
+            )
+```
+
+
+#### Missing values
+
+There is no missing data! this will make it easier to work with the dataset.
+```{r, fig.height=7, echo=FALSE}
+plot_missing(train_raw_tbl)
+```
+
+#### Outliers
+The information derived from the numerical data diagnosis is as follows:
+
+- **outliers_cnt** : Count of outliers
+- **outliers_ratio** : Percentage of outliers
+- **outliers_mean** : Average of outliers
+```{r}
+train_raw_tbl %>%
+  diagnose_outlier() %>% 
+  select(-with_mean,-without_mean) %>% 
+  datatable(rownames = FALSE, 
+            extensions = c('FixedColumns'),
+            options = list(
+              dom = 'Bfrtip',
+              searching = FALSE,
+              info = FALSE,
+              scrollX = TRUE,
+              scrollCollapse=TRUE,
+              fixedHeader = TRUE,
+              fixedColumns = list(leftColumns = 1))) %>%
+  formatRound(columns = c("outliers_ratio", "outliers_mean"),digits = 2)
+```
+
+
+### Targer Variable 
+
+**How many employees were left?**
+
+1,049 (84% of cases) employees did not leave the organization while 201 (16% of cases) did leave the organization making our dataset to be considered **imbalanced** since more people stay in the organization than they actually leave. Knowing that we are dealing with an imbalanced dataset will help us determine what will be the best approach to implement our predictive model.
+
+
+The bar graph is suitable for showing discrete variable counts.
+```{r, fig.height=5, fig.width=8}
+
+attritions_number <- train_raw_tbl %>% 
+  group_by(Attrition) %>% 
+  summarize(Count = n()) %>%
+  ggplot(aes(x=Attrition, y=Count, fill = Attrition)) +
+  geom_col() +
+  theme_tufte() +
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) +
+  geom_text(aes(label = Count), size = 3, vjust = 1.2, color = "#FFFFFF") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5)) +
+  labs(title="Employee Attrition (Amount)", x = "Attrition", y = "Count")
+
+attrition_percentage <- train_raw_tbl %>% 
+  group_by(Attrition) %>% 
+  summarise(Count=n()) %>% 
+  mutate(percent = round(prop.table(Count),2) * 100) %>%
+  ggplot(aes("", Attrition, fill = Attrition)) +
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  theme_tufte() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  coord_polar("y", start = 0) +
+  ggtitle("Employee Attrition (%)") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5)) +
+  geom_text(aes(label = paste0(round(percent, 1), "%")), position = position_stack(vjust = 0.5), color = "white")
+  
+plot_grid(attritions_number, attrition_percentage, align="h", ncol=2)
+
+```
+
+### Distribution {.tabset .tabset-fade .tabset-pills}
+
+#### **Numerical Distribution**
+
+```{r, fig.height=14, fig.width=8, echo=FALSE}
+train_raw_tbl %>%
+  select_if(is.numeric) %>%                     
+  gather() %>% 
+  group_by(key) %>% 
+  mutate(kurtosis = moments::kurtosis(value),
+         skewness = moments::skewness(value),
+         label = paste0(key, "\n", "Kurtosis: ", round(kurtosis, 2), ", Skewness: ", round(skewness, 2))) %>%
+  ggplot(aes(value)) +
+  facet_wrap(~ label, scales = "free", ncol = 3, strip.position = "bottom") + 
+  geom_density(colour = "black", fill = "dodgerblue") +
+  scale_y_continuous(name = "Density") +
+  scale_x_continuous(name=" ") +
+  theme(strip.placement = "outside", 
+        axis.line = element_line(size=1, colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank())
+```
+
+#### Categorical Distribution
+
+```{r, fig.height=7, fig.width=10, echo=FALSE}
+plot_bar(train_raw_tbl %>% select(-Over18,-EmployeeCount,-StandardHours), 
+         ggtheme = theme_light(),
+         theme_config = list(strip.background = element_rect(colour = "black", fill = "dodgerblue")))
+```
+
+#### Faceted Histogram
+```{r, fig.height=12, fig.width=12, echo=FALSE}
+
+# Plot Faceted Histogram Function ----
+data <- train_raw_tbl
+plot_hist_facet <- function(data, bins = 10, ncol = 5,
+                            fct_reorder = FALSE, fct_rev = FALSE, 
+                            fill = palette_light()[[3]], 
+                            color = "white", scale = "free") {
+  data_factored <- data %>%
+    mutate_if(is.character, as.factor) %>%
+    mutate_if(is.factor, as.numeric) %>%
+    gather(key = key, value = value, factor_key = TRUE) 
+  if (fct_reorder) {
+    data_factored <- data_factored %>%
+      mutate(key = as.character(key) %>% as.factor())
+    }
+  if (fct_rev) {
+    data_factored <- data_factored %>%
+      mutate(key = fct_rev(key))
+    }
+  g <- data_factored %>%
+    ggplot(aes(x = value, group = key)) +
+    geom_histogram(bins = bins, fill = fill, color = color) +
+    facet_wrap(~ key, ncol = ncol, scale = scale) + 
+    theme_tq()
+  return(g)
+  }
+
+train_raw_tbl %>%
+  select(Attrition, everything()) %>%
+  plot_hist_facet(bins = 10, ncol = 5, fct_rev = F)
+
+```
+
+
+### Attrition vs Features {.tabset .tabset-fade .tabset-pills}
+
+#### **Descriptive features**
+
+**Age**
+
+As I see below, the majority of employees are between 28-36 years. It seems to a large majority of those who left were relatively younger.
+
+```{r}
+ggplot(train_raw_tbl, aes(x=Age, fill=Attrition)) +
+  geom_density(position="identity", alpha=0.5) + 
+  theme_classic() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) +
+  ggtitle("Age by Attrition") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15), legend.position="bottom") +
+  labs(x = "Age") 
+```
+
+Gender does not play any role in attrition at least directly.
+
+```{r}
+# plot 
+ggbarstats(
+  data = train_raw_tbl,
+  x = "Attrition",
+  y = "Gender",
+  sampling.plan = "jointMulti",
+  title = "Gender",
+  # xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE
+      )
+```
+
+
+**Marital Status**
+
+It seems to a large majority of those who left was a relatively single.
+
+```{r}
+train_raw_tbl %>% 
+  group_by(Attrition, MaritalStatus) %>% 
+  summarize(Count = n()) %>%
+  mutate(pct = round(prop.table(Count),2) * 100) %>%
+  ggplot(aes(x=Attrition, y=Count, fill=MaritalStatus)) + 
+  geom_bar(stat="identity", position=position_dodge()) + 
+  theme_tufte() + 
+  scale_fill_brewer(palette="Set2") +
+  geom_text(aes(label= sprintf("%.2f%%", pct)), size = 4, vjust = 1.2, 
+            color = "#FFFFFF", position = position_dodge(0.9)) + 
+  ggtitle("Marital Status by Attrition") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15)) +
+  labs(x = "Attrition", y = "Count")
+```
+
+Single employees have more attrition across age groups. The married employees, who have lower monthly income, attrit more whereas divorced employees have not attrited much.
+
+```{r}
+ggplot(train_raw_tbl) +
+ aes(x = Age, y = MonthlyIncome, colour = Attrition, size = Age) +
+ geom_point(alpha = 0.3,  position = position_jitter()) +
+ scale_color_manual(values=c("#377EB8","#E41A1C")) +
+ theme_tufte() +
+ facet_grid(vars(), vars(MaritalStatus))
+```
+
+
+#### **Employment features**
+
+```{r, echo=FALSE}
+dept_job_role_tbl <- train_raw_tbl %>%
+  select(EmployeeNumber, Department, JobRole, PerformanceRating, Attrition)
+
+dept_job_role_tbl %>%
+    group_by(Department, Attrition) %>%
+    summarize(Count = n()) %>%
+    ungroup() %>%
+    # Get Dept Attrition
+    group_by(Department) %>%
+    mutate(Percentage = Count / sum(Count))
+
+# train_raw_tbl %>%
+#   group_by(Attrition, Department) %>%
+#   summarize(Count = n()) %>%
+#   ungroup() %>%
+#   group_by(Department) %>%
+#     mutate(Percentage = paste0(round(prop.table(Count),2) * 100,"%")) %>%
+#   ggplot(aes(x=Attrition, y=Count, fill=Department)) +
+#   geom_bar(stat="identity", position=position_dodge()) +
+#   theme_tufte() +
+#   scale_fill_brewer(palette="Set2") +
+#   geom_text(aes(label = Percentage), size = 4, vjust = -0.7, color = "black", position = position_dodge(0.9)) +
+#   ggtitle("Department by Attrition") +
+#   theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15)) +
+#   labs(x = "Attrition", y = "Count")
+
+```
+
+```{r, echo=FALSE, eval=FALSE}
+train_raw_tbl %>% 
+  group_by(Attrition, Department) %>% 
+  summarize(Count = n()) %>% 
+  mutate(countT = sum(Count)) %>%
+  group_by(Attrition, Department, add=TRUE) %>% 
+  mutate(per=paste0(round(100*Count/countT,1),'%')) %>%
+  ggplot(aes(x=Attrition, y=Count, fill=Department)) + 
+  geom_bar(stat="identity", position=position_dodge()) + 
+  theme_tufte() + 
+  scale_fill_brewer(palette="Set2") +
+  geom_text(aes(label = per), size = 4, vjust = -0.7, color = "black", position = position_dodge(0.9)) + 
+  ggtitle("Department by Attrition") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15)) +
+  labs(x = "Attrition", y = "Count")
+
+```
+
+
+The Majority of the employees are from R&D department and Sales and the highest turnover rate belongs to Human Resources Department where `24%` have recorded attrition. It ould be a consequence of the high number of people from HR department.
+
+```{r, echo=FALSE}
+# Attrition vs Department
+ggbarstats(
+  data = train_raw_tbl,
+  x = "Attrition",
+  y = "Department",
+  sampling.plan = "jointMulti",
+  title = "Department",
+  # xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE
+)
+```
+
+**Number of Employees by Job Role**
+
+Sales and Research Scientist are the job positions with the highest number of employees.
+
+```{r}
+
+role.amount <- train_raw_tbl %>% 
+  select(JobRole) %>% 
+  group_by(JobRole) %>% 
+  summarize(amount=n()) %>%
+  ggplot(aes(area=amount, fill=JobRole, label=JobRole)) +  
+  geom_treemap() +
+  geom_treemap_text(grow = T, reflow = T, colour = "black") +
+  scale_fill_brewer(palette = "YlOrRd") +
+  theme(legend.position = "none") +
+  labs(title = "Major Job Roles Inside the Organization",
+  caption = "The area of each tile represents the number of employees by type of job role.",
+  fill = "JobRole")
+
+role.amount
+```
+
+**Attrition by Job Role**
+
+Sales Representatives, Human Resources and Lab Technician have the highest attrition rates. This could give us a hint that in these departments we are experiencing certain issues with employees.
+
+```{r, fig.width=12}
+# plot 
+      ggbarstats(
+        data = train_raw_tbl,
+        x = "Attrition",
+        y = "JobRole",
+        sampling.plan = "jointMulti",
+        # title = "",
+        # xlab = "",
+        # legend.title = "",
+        ggtheme = hrbrthemes::theme_ipsum_pub(),
+        ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+        palette = "Set1",
+        messages = FALSE
+      )
+```
+
+
+```{r, fig.width=10, fig.height=8, echo=FALSE, eval=FALSE}
+# The Funnel with the Attrition Rates by Job Role
+
+attr.job <- train_raw_tbl %>% 
+  select(JobRole, Attrition) %>% 
+  group_by(JobRole, Attrition) %>% 
+  summarize(amount=n()) %>%
+  mutate(pct=round(prop.table(amount),2) * 100) %>% 
+  arrange(pct)
+nofunc <- colorRampPalette(c("#377EB8", "#377EB8", "#377EB8"))
+yesfunc <- colorRampPalette(c("#E41A1C", "#E41A1C", "#E41A1C"))
+
+yes.attr <- attr.job %>% 
+  filter(Attrition == "Yes") %>% 
+  arrange(JobRole) 
+no.attr <- attr.job %>% 
+  filter(Attrition == "No") %>% 
+  arrange(JobRole)
+
+par(mar = pyramid.plot(no.attr$pct, yes.attr$pct, labels = unique(attr.job$JobRole),
+                       top.labels=c("No","","Yes"), main = "Attrition by Job Role", 
+                       gap=30, show.values = T, rxcol = yesfunc(9), lxcol = nofunc(9)))
+
+```
+
+**Attrition by Job Level**
+
+- Majority of the employees are in the lower and intermediate levels.
+- Most attrition is from the lower level, followed by intermediate level.
+
+It Shows that juniors are leaving the company most - addressing problems faced by lowest level at the company could help reduce attrition. The required training could be missing or long term roadmap could be an issue for junior level employees.
+
+```{r}
+# plot 
+ggbarstats(
+  data = train_raw_tbl,
+  x = "Attrition",
+  y = "JobLevel",
+  sampling.plan = "jointMulti",
+  title = "Job Level",
+  # xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE
+      )
+```
+
+
+#### **Compensation features**
+
+**Income**
+
+**The Impact of Income towards Attrition** I wonder how much importance does each employee give to the income they earn in the organization. Here we will find out if it is true that money is really everything!
+
+-   What is the average monthly income by department? Are there any significant differences between individuals who quit and didn't quit?
+-   Are there significant changes in the level of income by Job Satisfaction? Are individuals with a lower satisfaction getting much less income than the ones who are more satisfied?
+-   Do employees who quit the organization have a much lower income than people who didn't quit the organization?
+-   Do employees with a higher performance rating earn more than with a lower performance rating? Is the difference significant by Attrition status?
+
+**Findings**:
+
+-   **Income by Departments**: We can see huge differences in each department by attrition status.
+-   **Income by Job Satisfaction**: It seems the lower the job satisfaction the wider the gap by attrition status in the levels of income.
+-   **Attrition sample population**: I would say that most of this sample population has had a salary increase of less than 15% and a monthly income of less than 7,000
+-   **Exhaustion at Work**: Over 54% of workers who left the organization worked overtime! Will this be a reason why employees are leaving?
+-   **Differences in the DailyRate**: `HealthCare Representatives` , `Sales Representatives`, and `Research Scientists` have the biggest daily rates differences in terms of employees who quit or didn't quit the organization. This might indicate that at least for the these roles, the sample population that left the organization was mainly because of `income`.
+
+It seems fair to say that a large majority of those who left had a relatively `lower monthly income` and daily rate while the never made it in majority into the higher hourly rate group. On the other hand, the differences become elusive when comparing the monthly rate.
+
+```{r}
+g1 <- ggplot(train_raw_tbl, 
+            aes(x = MonthlyIncome, fill = Attrition)) + 
+            geom_density(alpha = 0.7) + 
+            theme_tufte() +
+            scale_fill_manual(values=c("#377EB8","#E41A1C"))
+
+g2 <- ggplot(train_raw_tbl, 
+            aes(x = HourlyRate, fill = Attrition)) + 
+            geom_density(alpha = 0.7) + 
+            theme_tufte() +
+            scale_fill_manual(values=c("#377EB8","#E41A1C"))
+
+g3 <- ggplot(train_raw_tbl, 
+            aes(x = DailyRate, fill = Attrition)) + 
+            geom_density(alpha = 0.7) + 
+            theme_tufte() +
+            scale_fill_manual(values=c("#377EB8","#E41A1C"))
+
+g4 <- ggplot(train_raw_tbl, 
+            aes(x = MonthlyRate, fill = Attrition)) + 
+            geom_density(alpha = 0.7) + 
+            theme_tufte() +
+            scale_fill_manual(values=c("#377EB8","#E41A1C"))
+
+grid.arrange(g1, g2, g3, g4, ncol = 2, nrow = 2) 
+
+```
+
+**Monthly Income**
+
+It seems to a large majority of those who left had a relatively lower monthly income.
+
+```{r}
+ggplot(train_raw_tbl, aes(x=Attrition, y=MonthlyIncome, color=Attrition, fill=Attrition)) +
+  geom_boxplot() + 
+  theme_tufte() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  scale_color_manual(values=c("#377EB8","#E41A1C")) + 
+  ggtitle("Monthly Income by Attrition") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15)) +
+  labs(x = "Attrition", y = "Monthly Income")
+```
+
+
+```{r}
+train_raw_tbl %>% group_by(JobSatisfaction, Attrition) %>% 
+  summarize(N = mean(MonthlyIncome)) %>%
+  ggplot(aes(x=JobSatisfaction, y=N, group=Attrition)) + 
+  geom_line(aes(linetype=Attrition, color=Attrition), size=1) +
+  geom_point(aes(color=Attrition), size=2) + 
+  theme_tufte() + 
+  scale_color_manual(values=c("#377EB8","#E41A1C")) + 
+  ggtitle("Monthly Income by Attrition and Job Satisfaction") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15), legend.position="bottom") +
+  labs(x = "Job Satisfaction", y = "Monthly Income") 
+```
+
+
+```{r}
+data_processed_tbl %>%
+  ggplot(aes(Education, y=MonthlyIncome, fill=Attrition)) +
+  geom_boxplot(position = position_dodge(1)) +
+  theme_bw() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) +
+  ggtitle("Monthly Income by Attrition and Educational_Level") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15)) +
+  labs(x = "Attrition", y = "Count")
+```
+
+
+**Income by gender**
+
+```{r, fig.height=3, fig.width=10}
+monthly_income <- ggplot(train_raw_tbl, aes(x=Gender, y=MonthlyIncome, color=Gender, fill=Gender)) + geom_boxplot() +
+  scale_fill_manual(values=c("#F5A9F2", "#5882FA")) + 
+  scale_color_manual(values=c("#FE2EF7", "#5858FA")) +
+  coord_flip() + labs(title="Are there any Gender Disparities in Income?")
+
+gender.income <- train_raw_tbl %>% 
+  select(Gender, MonthlyIncome) %>% 
+  group_by(Gender) %>% 
+  summarize(avg_income=round(mean(MonthlyIncome), 2)) %>%
+  ggplot(aes(Gender, avg_income, fill=Gender)) +
+  geom_col() +
+  theme_tufte() + 
+  scale_fill_manual(values=c("#F5A9F2", "#5882FA")) + 
+  scale_color_manual(values=c("#FE2EF7", "#5858FA")) + 
+  geom_text(aes(x=Gender, y=0.01, label= paste0("$ ", avg_income)),
+             vjust=-4, size=3, colour="black", fontface="bold") +
+  labs(title="Average Salary by Gender", x="Gender",y="Salary") +
+  theme(plot.title=element_text(size=14, hjust=0.5))
+
+plot_grid(monthly_income, gender.income, ncol=2, nrow=1)
+```
+
+**Average Income by Department** 
+
+Let's determine if income was a major factor when it came to leaving the company. Let's start by taking the average monthly income of people who left the company and people who stayed in the company.
+
+```{r}
+# Group by department 
+avg.income <- train_raw_tbl %>% 
+  select(Department, MonthlyIncome, Attrition) %>% 
+  group_by(Attrition, Department) %>%
+  summarize(avg.inc=mean(MonthlyIncome)) %>%
+  ggplot(aes(x=reorder(Department, avg.inc), y=avg.inc, fill=Attrition)) + 
+  geom_bar(stat="identity", position="dodge") + 
+  facet_wrap(~Attrition) + 
+  theme_tufte() + 
+  theme(axis.text.x = element_text(angle = 20), plot.title=element_text(hjust=0.2,vjust=-0.2)) + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  labs(y="Average Income", x="Department", title="Average Income by Department \n and Attrition Status") + 
+  geom_text(aes(x=Department, y=0.01, label= paste0("$ ", round(avg.inc,2))),
+             vjust=-0.5, size=3, colour="black", fontface="bold")
+avg.income
+```
+
+**Determining Satisfaction by Income:**
+
+```{r}
+# Turn the column to factor: One because it should not be considered an integer
+# Two: Will help us sort in an orderly manner.
+train_raw_tbl$JobSatisfaction <- as.factor(train_raw_tbl$JobSatisfaction)
+
+high.inc <- train_raw_tbl %>% select(JobSatisfaction, MonthlyIncome, Attrition) %>% 
+  group_by(JobSatisfaction, Attrition) %>%
+  summarize(med=median(MonthlyIncome)) %>%
+  ggplot(aes(x=fct_reorder(JobSatisfaction, -med), y=med, color=Attrition)) + 
+  geom_point(size=3) + 
+  geom_segment(aes(x=JobSatisfaction, xend=JobSatisfaction, y=0, yend=med)) + 
+  facet_wrap(~Attrition) + 
+  labs(title="Is Income a Reason for Employees to Leave?", subtitle="by Attrition Status", 
+       y="Median Income",x="Level of Job Satisfaction") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6), plot.title=element_text(hjust=0.5), 
+        strip.background = element_blank(),
+        strip.text = element_blank()) + 
+  coord_flip() + theme_minimal() + scale_color_manual(values=c("#377EB8","#E41A1C")) + 
+  geom_text(aes(x=JobSatisfaction, y=0.01, label= paste0("$ ", round(med,2))),
+            hjust=-0.5, vjust=-0.5, size=4, 
+            colour="black", fontface="italic",angle=360)
+high.inc
+
+```
+
+**Income and the Level of Attrition**
+
+```{r, fig.height=7}
+per.sal <- train_raw_tbl %>% 
+  select(Attrition, PercentSalaryHike, MonthlyIncome) %>% 
+  ggplot(aes(x=PercentSalaryHike, y=MonthlyIncome)) + 
+  geom_jitter(aes(col=Attrition), alpha=0.5) + 
+  theme_economist() + theme(legend.position="none") + 
+  scale_color_manual(values=c("#377EB8","#E41A1C")) + 
+  labs(title="Income and its Impact on Attrition") + 
+  theme(plot.title=element_text(hjust=0.5, color="black"), 
+        plot.background=element_rect(fill="#f2f2f2"),
+        axis.text.x=element_text(colour="black"), 
+        axis.text.y=element_text(colour="black"),
+        axis.title=element_text(colour="black"))
+
+perf.inc <- train_raw_tbl %>% 
+  select(PerformanceRating, MonthlyIncome, Attrition) %>% 
+  group_by(factor(PerformanceRating), Attrition) %>% 
+  ggplot(aes(x=factor(PerformanceRating), y=MonthlyIncome, fill=Attrition)) + 
+  geom_violin() + 
+  coord_flip() + 
+  facet_wrap(~Attrition) + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  theme_economist() + 
+  theme(legend.position="bottom", strip.background = element_blank(), 
+        strip.text.x = element_blank(),
+        plot.title=element_text(hjust=0.5, color="black"), 
+        plot.background=element_rect(fill="#f2f2f2"), 
+        axis.text.x=element_text(colour="black"), 
+        axis.text.y=element_text(colour="black"),
+        axis.title=element_text(colour="black"), 
+        legend.text=element_text(color="black")) + 
+  labs(x="Performance Rating",y="Monthly Income") 
+plot_grid(per.sal, perf.inc, nrow=2)
+
+```
+
+**Salary by Job role**
+
+Managers and Research Directors have the highest salary on average.
+```{r}
+
+
+# Median Salary
+job.sal <- train_raw_tbl %>% 
+  select(JobRole, MonthlyIncome) %>% 
+  group_by(JobRole) %>% 
+  summarize(med=median(MonthlyIncome), avg=mean(MonthlyIncome))
+
+
+p1 <- ggplot(job.sal, aes(x=reorder(JobRole,-med), y=med)) +  geom_bar(stat="identity", width=.5, fill="#FE9A2E") +
+  labs(title="Salary by Job Role", subtitle="Median",x="Job Role",y="Median Income") + 
+  theme(axis.text.x = element_text(angle=90, vjust=0.6))
+
+
+p2 <- ggplot(job.sal, aes(x=reorder(JobRole,-avg), y=avg)) +  geom_bar(stat="identity", width=.5, fill="#BE81F7") + 
+  labs(title="Salary by Job Role", subtitle="Mean",x="Job Role",y="Mean Income") + 
+  theme(axis.text.x = element_text(angle=90, vjust=0.6))
+
+
+plot_grid(p1, p2, ncol=2)
+```
+
+**Stock Option**
+```{r}
+# Let's see what the Average MonthlyIncome is for those who have stockoptionlevels and for those who don't.
+# First let's see how many employees have Stockoption levels.
+
+stockoption <- train_raw_tbl %>% 
+  select(StockOptionLevel, Attrition) %>% 
+  group_by(StockOptionLevel, Attrition) %>% 
+  summarize(n=n())  %>%
+  ggplot(aes(x=reorder(StockOptionLevel, -n), y=n, fill=factor(StockOptionLevel))) + 
+  geom_bar(stat="identity") + coord_flip() + 
+  facet_wrap(~Attrition) + theme_economist() + scale_fill_manual(values=c("#DF0101", "#F5A9A9", "#BEF781", "#04B404")) + 
+  guides(fill=guide_legend(title="Stock Option \n Level")) + 
+  theme(legend.position="none", plot.background=element_rect(fill="white"), plot.title=element_text(hjust=0.5, color="black"),
+        axis.text.x=element_text(colour="black"), axis.text.y=element_text(colour="black"),
+        axis.title=element_text(colour="black"),
+        strip.text.x = element_text(color="black"), 
+        legend.text=element_text(color="black"))  + 
+  geom_label(aes(label=n, fill = factor(StockOptionLevel)), colour = "black", fontface = "italic", hjust=0.55) + 
+  labs(title="Number of Employees", x="StockOptionLevel", y="Amount")
+
+# Average income by StockOption using the geom_line()
+
+income_stockoption <- train_raw_tbl %>% 
+  select(StockOptionLevel, MonthlyIncome, Attrition) %>% 
+  group_by(StockOptionLevel, Attrition) %>%
+  ggplot(aes(x=MonthlyIncome)) + 
+  geom_area(aes(fill=factor(StockOptionLevel)), stat ="bin", bins=100, alpha=0.8) +
+  facet_wrap(~Attrition) + 
+  theme_economist() +   scale_fill_manual(values=c("#DF0101", "#F5A9A9", "#BEF781", "#04B404")) + 
+  guides(fill=guide_legend(title="Stock Option \n Level")) + 
+  theme(legend.position="bottom", plot.background=element_rect(fill="white"), plot.title=element_text(hjust=0.5, color="black"),
+        axis.text.x=element_text(colour="black"), axis.text.y=element_text(colour="black"),axis.title=element_text(colour="black"),
+        strip.text.x = element_text(color="black"),
+        legend.text=element_text(color="black"), 
+        legend.background = element_rect(fill="#FFF9F5",size=0.5, linetype="solid", colour ="black"))
+
+plot_grid(stockoption, income_stockoption, nrow=2)
+```
+
+#### **Survey Results**
+
+```{r}
+# plot 
+ggbarstats(
+  data = train_raw_tbl,
+  x = "Attrition",
+  y = "JobSatisfaction",
+  sampling.plan = "jointMulti",
+  title = "Job Satisfaction",
+  #xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE)
+```
+
+
+**Working Environment**
+
+In this section, we will explore everything that is related to the working environment and the structure of the organization.
+
+
+```{r}
+# Environment Satisfaction let's use the changes by Job Role
+
+env.attr <- train_raw_tbl %>% 
+  select(EnvironmentSatisfaction, JobRole, Attrition) %>% 
+  group_by(JobRole, Attrition) %>%
+  summarize(avg.env=mean(EnvironmentSatisfaction))
+
+ggplot(env.attr, aes(x=JobRole, y=avg.env)) + geom_line(aes(group=Attrition), color="#58ACFA", linetype="dashed") + 
+geom_point(aes(color=Attrition), size=3) +  theme_economist() + 
+  theme(plot.title=element_text(hjust=0.5), axis.text.x=element_text(angle=90),
+        plot.background=element_rect(fill="#f2f2f2")) + 
+  labs(title="Working Environment", y="Average Environment Satisfaction", x="Job Position") +
+  scale_color_manual(values=c("#58FA58", "#FA5858"))
+```
+ 
+
+#### **Performance**
+
+```{r}
+# plot 
+ggbarstats(
+  data = train_raw_tbl,
+  x = "Attrition",
+  y = "JobInvolvement",
+  sampling.plan = "jointMulti",
+  title = "Job Involvement",
+  # xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE)
+```
+
+
+```{r}
+# plot 
+ggbarstats(
+  data = train_raw_tbl,
+  x = "Attrition",
+  y = "PerformanceRating",
+  sampling.plan = "jointMulti",
+  title = "Performance Rating",
+  #xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE)
+```
+
+**Promotion**
+
+```{r, fig.width=12}
+# plot 
+ggbarstats(
+  data = train_raw_tbl,
+  x = "Attrition",
+  y = "YearsSinceLastPromotion",
+  sampling.plan = "jointMulti",
+  title = "Years since last promotion",
+  results.subtitle = FALSE,
+  # xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE)
+```
+
+
+This shows years at company in relation to years since last promotion, grouped by both `attrition` and `overtime`. This is an interesting issue, since a high correlation between these two variables (longer you are in the company, less chance you have to be promoted, so to speak) may mean that people are not really growing within the company. However, since this is a simulated dataset we cannot compare it with some norms outside it, so we can compare certain groups within our set, e.g. those who are working overtime and those who are not.
+
+
+```{r}
+ggplot(train_raw_tbl, 
+       aes(y = YearsSinceLastPromotion, x = YearsAtCompany, colour = OverTime)) + 
+  geom_jitter(size = 1, alpha = 0.7) + 
+  geom_smooth(method = "glm") + 
+  facet_wrap(~ Attrition) + 
+  ggtitle("Attrition") + 
+  scale_colour_manual(values = c("#386cb0","#fdb462")) + 
+  theme(plot.title = element_text(hjust = 0.5)) + theme_tufte() 
+```
+
+
+
+#### **Work Life **
+
+
+```{r}
+# plot 
+      ggbarstats(
+        data = train_raw_tbl,
+        x = "Attrition",
+        y = "WorkLifeBalance",
+        sampling.plan = "jointMulti",
+        title = "Work Life Balance",
+        # xlab = "",
+        # legend.title = "",
+        ggtheme = hrbrthemes::theme_ipsum_pub(),
+        ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+        palette = "Set1",
+        messages = FALSE
+      )
+```
+
+
+How many employees quit by Department? Did they have a proper work-life balance?
+
+```{r}
+attritions <- train_raw_tbl %>% 
+  filter(Attrition == "Yes")
+
+attritions$WorkLifeBalance <- as.factor(attritions$WorkLifeBalance)
+
+by.department <- attritions %>% 
+  select(Department, WorkLifeBalance) %>% 
+  group_by(Department, WorkLifeBalance) %>%
+  summarize(count=n()) %>% 
+  ggplot(aes(x=fct_reorder(WorkLifeBalance, -count), y=count, fill=Department)) + geom_bar(stat='identity') +
+  facet_wrap(~Department) + 
+  theme_economist() + theme(legend.position="bottom", plot.title=element_text(hjust=0.5),
+                            plot.background=element_rect(fill="#f2f2f2")) + 
+  scale_fill_manual(values=c("#FA5882", "#819FF7", "#FE2E2E")) + 
+  geom_label(aes(label=count, fill = Department), colour = "white", fontface = "italic") + 
+  labs(title="Is there a Work Life Balance Environment?", x="Work and Life Balance", y="Number of Employees")
+
+by.department
+```
+
+
+**Work life balance vs Distance from home** 
+```{r}
+ggplot(train_raw_tbl, 
+       aes(x= WorkLifeBalance, y=DistanceFromHome, group = WorkLifeBalance, fill = WorkLifeBalance)) + 
+  geom_boxplot(alpha=0.7) + 
+  theme(legend.position="none") + 
+  theme_classic() +
+  facet_wrap(~ Attrition) + 
+  ggtitle("Attrition") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+There is a relatively higher percentage of people working overtime in the group of those who left. It could be due to workload. Discussing on regular basis about the workload, may solve this problem.
+
+```{r}
+# plot 
+ggbarstats(
+  data = train_raw_tbl,
+  x = "Attrition",
+  y = "OverTime",
+  sampling.plan = "jointMulti",
+  title = "Level of Attrition by Overtime Status",
+  results.subtitle = FALSE,
+  # xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE)
+```
+
+```{r, fig.width=10}
+overtime_percent <- train_raw_tbl %>% 
+  select(OverTime, Attrition) %>% 
+  filter(Attrition == "Yes") %>% 
+  group_by(Attrition, OverTime) %>%
+  summarize(n=n()) %>% 
+  mutate(pct=round(prop.table(n),2) * 100) %>% 
+  ggplot(aes(x="", y=pct, fill=OverTime)) + 
+  geom_bar(width = 1, stat = "identity") + coord_polar("y", start=0) +
+  theme_tufte() + scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  geom_label(aes(label = paste0(pct, "%")), 
+             position = position_stack(vjust = 0.5), colour = "black",  fontface = "italic") +
+  theme(legend.position="bottom", strip.background = element_blank(), strip.text.x = element_blank(),
+        plot.title=element_text(hjust=0.5, color="black"), plot.subtitle=element_text(color="black"),
+        plot.background=element_rect(fill="#FFFFFF"),axis.text.x=element_text(colour="white"),
+        axis.text.y=element_text(colour="black"), axis.title=element_text(colour="black"), 
+        legend.background = element_rect(fill="#FFF9F5",size=0.5, linetype="solid", colour ="black")) + 
+  labs(title="Level of Attrition by Overtime Status", subtitle="In Percent", x="", y="") 
+
+
+overtime_number <- train_raw_tbl %>% 
+  select(OverTime, Attrition) %>% 
+  filter(Attrition == "Yes") %>% 
+  group_by(Attrition, OverTime) %>%
+  summarize(n=n()) %>% 
+  mutate(pct=round(prop.table(n),2) * 100) %>% 
+  ggplot(aes(x=OverTime, y=n, fill=OverTime)) + geom_bar(stat="identity") + scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  geom_label(aes(label=paste0(n)), fill="#FFF9F5", colour = "black", fontface = "italic") + 
+  labs(title="Level of Attrition by Overtime Status", subtitle="In Numbers", x="Overtime Status", y="Number of Employees") + theme_minimal() + 
+  theme(legend.position="bottom", strip.background = element_blank(), strip.text.x = element_blank(), 
+        plot.title=element_text(hjust=0.5, color="black"), plot.subtitle=element_text(color="black"),
+        plot.background=element_rect(fill="#FFFFFF"), axis.text.x=element_text(colour="black"), axis.text.y=element_text(colour="black"),
+        axis.title=element_text(colour="black"), 
+        legend.background = element_rect(fill="#FFF9F5",size=0.5, linetype="solid", colour ="black")) 
+plot_grid(overtime_percent, overtime_number)
+```
+
+
+```{r}
+# Attrition vs Business Travel
+ggbarstats(
+  data = train_raw_tbl,
+  x = "Attrition",
+  y = "BusinessTravel",
+  sampling.plan = "jointMulti",
+  title = "Business Travel",
+  # xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE
+)
+```
+
+```{r, fig.width=9, eval=FALSE, echo=FALSE}
+
+work_bal_cnt <- train_raw_tbl %>% 
+  select(Attrition, BusinessTravel, WorkLifeBalance) %>% 
+  group_by(Attrition, BusinessTravel) %>% 
+  summarize(count=n()) %>% 
+  mutate(pct=round(prop.table(count),2) * 100) %>%
+  ggplot(aes(x=Attrition, y=count, fill=BusinessTravel, color=Attrition)) + 
+  geom_bar(stat='identity') + 
+  facet_wrap(~BusinessTravel) + 
+  geom_label(aes(label=count, fill = BusinessTravel), colour = "white", fontface = "italic")  + 
+  theme_classic() + 
+  theme(legend.position="none") + 
+  scale_fill_manual(values=c("#00dbdb", "#00db6e", "#fa8072")) +
+  scale_color_manual(values=c("#808080", "#808080")) + labs(title="Attrition by Business Travel of Employees", 
+                                                          x="Attrition", y="Number of Employees") + coord_flip() +
+  theme(plot.title=element_text(hjust=0.5), plot.background=element_rect(fill="#FFFFFF")) 
+        
+work_bal_pct <- train_raw_tbl %>% 
+  select(Attrition, BusinessTravel, WorkLifeBalance) %>% 
+  group_by(Attrition, BusinessTravel) %>% 
+  summarize(count=n()) %>% 
+  mutate(pct=round(prop.table(count),2) * 100) %>%
+  ggplot(aes(x=Attrition, y=pct, fill=BusinessTravel, color=Attrition)) + 
+  geom_bar(stat='identity') + facet_wrap(~BusinessTravel) + theme_classic() +  
+  theme(legend.position="none") + 
+  geom_label(aes(label=paste0(pct, "%"), fill = BusinessTravel), colour = "white", fontface = "italic")  + 
+  scale_fill_manual(values=c("#00dbdb", "#00db6e", "#fa8072")) +
+  scale_color_manual(values=c("#808080", "#808080")) + labs(x="Attrition", y="Percentage (%)") + coord_flip() + 
+  theme(plot.background=element_rect(fill="#FFFFFF"))
+
+plot_grid(work_bal_cnt, work_bal_pct, nrow=2)
+```
+
+**Home Distance from Work**
+
+It seems to a large majority of those who left had a relatively lower distance from work.
+
+```{r}
+ggplot(train_raw_tbl, aes(x=DistanceFromHome, fill=Attrition, color=Attrition)) +
+  geom_density(position="identity", alpha=0.5) + 
+  theme_tufte() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) +
+  ggtitle("Distance from Work by Attrition") + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15), legend.position="bottom") +
+  labs(x = "Distance from Work") 
+```
+
+Is distance from work a huge factor in terms of quitting the organization?
+- Determine the average distance of people who did not quit the organization.Then use this number as an anchor to create a column for the employees that quit.
+
+```{r, fig.width=10, echo=FALSE}
+# Let's see what number of employees that quit are above the average distance of employees that didn't quit.
+
+no.attritions <- train_raw_tbl %>% filter(Attrition == "No")
+
+# Average distance of employees that didn't quit.
+med.distance <- no.attritions %>% select(DistanceFromHome) %>% summarize(med.dist=round(median(DistanceFromHome), 2))
+
+attritions$Median_Distance <- ifelse(attritions$DistanceFromHome < 7, "Below Average", "Above Average")
+
+# Distribution of both Distance from Work Status
+dist <- attritions %>% select(Median_Distance, DistanceFromHome) %>%
+ggplot(aes(x=DistanceFromHome, fill=Median_Distance)) + geom_density() + facet_wrap(~Median_Distance) + theme_minimal() + 
+scale_color_manual(values=c("#2EFE64", "#FA5858")) + scale_fill_manual(values=c("#F6CED8", "#ECF6CE")) +
+theme(legend.position="bottom", plot.background=element_rect(fill="#FFFFFF")) + 
+geom_vline(aes(xintercept=7),color="black", linetype="dashed", size=1) + 
+annotate("text", label = "Median = 7", x = 15, y = 0.17, color = "black")
+
+dist
+```
+
+```{r, echo=FALSE}
+p1 <- attritions %>% select(Median_Distance) %>% group_by(Median_Distance) %>% summarize(count=n()) %>%
+ggplot(aes(x=Median_Distance, y=count, color=Median_Distance, fill=Median_Distance)) + geom_bar(stat="identity", position="dodge") +  theme_minimal() +
+theme(legend.position="none") + scale_fill_manual(values=c("#FA5858", "#819FF7")) + 
+geom_label(aes(label=count, fill = Median_Distance), colour = "white", fontface = "italic") +
+scale_color_manual(values=c("#DF0101", "#013ADF")) + labs(x="Distance from Work Status")
+
+p2 <- attritions %>% select(Median_Distance) %>% group_by(Median_Distance) %>% summarize(count=n()) %>%
+mutate(pct=round(prop.table(count),2) * 100) %>% 
+ggplot(aes(x=Median_Distance, y=pct, color=Median_Distance, fill=Median_Distance)) + geom_bar(stat="identity") + theme_minimal() +  
+theme(legend.position="none") + 
+geom_label(aes(label=pct, fill = Median_Distance), colour = "white", fontface = "italic")  + scale_fill_manual(values=c("#FA5858", "#819FF7")) +
+scale_color_manual(values=c("#DF0101", "#013ADF")) + labs(x="Distance from Work Status", y="Percentage (%)")
+
+plot_grid(p1, p2, ncol=2)
+
+```
+
+
+#### **Training and Education**
+
+
+**Attrition by Level of Education** 
+
+This goes hand in hand with the previous statement, as bachelors are the ones showing the highest level of attrition which makes sense since Millenials create the highest turnover rate inside the organization.
+
+```{r, fig.width=12}
+
+# plot 
+ggbarstats(
+  data = data_processed_tbl,
+  x = "Attrition",
+  y = "Education",
+  sampling.plan = "jointMulti",
+  # title = "",
+  # xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE
+      )
+```
+
+
+```{r}
+# I want to know in terms of proportions if we are loosing key talent here.
+edu.level <- data_processed_tbl %>% 
+  select(Education, Attrition) %>% 
+  group_by(Education, Attrition) %>% 
+  summarize(n=n()) %>% 
+  ggplot(aes(x=fct_reorder(Education,n), y=n, fill=Attrition, color=Attrition)) + 
+  geom_bar(stat="identity") +
+  facet_wrap(~Attrition) + 
+  coord_flip() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  scale_color_manual(values=c("#377EB8","#E41A1C")) + 
+  geom_label(aes(label=n, fill = Attrition), colour = "white", fontface = "italic") + 
+  labs(x="", y="Number of Employees", title="Attrition by Educational Level") + theme_clean() +  
+  theme(legend.position="none", plot.title=element_text(hjust=0.5, size=14))
+
+edu.level
+
+```
+
+```{r, echo=FALSE, eval=FALSE}
+edu.pct <- data_processed_tbl %>% 
+  select(Education, Attrition) %>% 
+  group_by(Education, Attrition) %>% 
+  summarize(n=n()) %>% 
+  mutate(pct=round(prop.table(n),2) * 100) %>% 
+  arrange(desc(pct)) %>%
+  ggplot(aes(x=fct_reorder(Education,pct), y=pct, fill=Attrition, color=Attrition)) + 
+  geom_bar(stat="identity") + facet_wrap(~Attrition) + 
+  coord_flip() + 
+  geom_label(aes(label=paste0(pct, "%"), fill = Attrition), colour = "white", fontface = "italic") + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  scale_color_manual(values=c("#377EB8","#E41A1C")) +
+  labs(x="", y="Number of Employees (%)", title="Attrition by Educational Level", subtitle="Percentage (%) by Employee") + theme_clean() +
+  theme(legend.position="none", plot.title=element_text(hjust=0.5, size=14), plot.subtitle=element_text(hjust=0.5, size=12, face="italic"))
+edu.pct
+```
+
+
+
+#### **Time-Based Features**
+
+
+**Work Experience**
+
+It seems to a large majority of those who left had a relatively shorter working years. The employees with less than 10 years of experience prefer to move to another company.
+
+```{r, fig.width=12, echo=FALSE}
+work_exp <- ggplot(train_raw_tbl, aes(x=TotalWorkingYears, fill=Attrition, color=Attrition)) +
+  geom_density(position="identity", alpha=0.5) + 
+  theme_tufte() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  scale_color_manual(values=c("#377EB8","#E41A1C")) + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15), legend.position="bottom") +
+  labs(x = "Total Working Years", title = "Working Experience" ) 
+
+yrs_comp <- ggplot(train_raw_tbl, aes(x=TotalWorkingYears, fill=Attrition, color=Attrition)) +
+  geom_density(position="identity", alpha=0.5) + 
+  theme_tufte() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  scale_color_manual(values=c("#377EB8","#E41A1C")) + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15), legend.position="bottom") +
+  labs(x = "YearsAtCompany", title = "Years at the Company" ) 
+
+yrs_jobrole <- ggplot(train_raw_tbl, aes(x=TotalWorkingYears, fill=Attrition, color=Attrition)) +
+  geom_density(position="identity", alpha=0.5) + 
+  theme_tufte() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  scale_color_manual(values=c("#377EB8","#E41A1C")) + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15), legend.position="bottom") +
+  labs(x = "YearsInCurrentRole", title = "Years in Current Role" ) 
+
+yrs_currmanager <- ggplot(train_raw_tbl, aes(x=TotalWorkingYears, fill=Attrition, color=Attrition)) +
+  geom_density(position="identity", alpha=0.5) + 
+  theme_tufte() + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C")) + 
+  scale_color_manual(values=c("#377EB8","#E41A1C")) + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 15), legend.position="bottom") +
+  labs(x = "YearsWithCurrManager", title = "Years with Current Manager" ) 
+
+plot_grid(work_exp, yrs_comp,yrs_jobrole, yrs_currmanager, nrow=2)
+```
+
+
+**Findings:**
+
+- **Managers**: Employees that are dealing with recently hired managers have a lower satisfaction score than managers that have been there for a longer time.
+- **Working Environment**: As expected, managers and healthcare representatives are dealing with a lower working environment however, we don't see the same with sales representatives that could be because most sales representatives work outside the organization.
+
+
+
+```{r, fig.width=12}
+# plot 
+ggbarstats(
+  data = train_raw_tbl,
+  x = "Attrition",
+  y = "YearsWithCurrManager",
+  sampling.plan = "jointMulti",
+  title = "Years with Current Manager",
+  # xlab = "",
+  # legend.title = "",
+  ggtheme = hrbrthemes::theme_ipsum_pub(),
+  ggplot.component = list(scale_x_discrete(guide = guide_axis(n.dodge = 2))),
+  palette = "Set1",
+  messages = FALSE
+      )
+```
+
+**Current Managers and Average Satisfaction Score**
+
+```{r, echo=FALSE}
+# Create a Categorical Value for Years with Current Manager
+# Create a Categorical Value for RelationShip Satisfaction (We will use facet_wrap here)
+# Then we will use income as our Y-Axis
+
+train_raw_tbl$CatYearsManager <- ifelse(train_raw_tbl$YearsWithCurrManager <= 1, "Recently Hired",
+                            ifelse(train_raw_tbl$YearsWithCurrManager > 1 & train_raw_tbl$YearsWithCurrManager <= 4, "2-4 Years hired", "Long Established Manager"))
+
+
+# Determine what is the Average Relationship Satisfaction with the Recently Hired Managers
+rel.sat <- train_raw_tbl %>% 
+  select(CatYearsManager, RelationshipSatisfaction, Attrition) %>% 
+  group_by(CatYearsManager, Attrition) %>%
+  summarize(avg.sat=mean(RelationshipSatisfaction)) %>%
+  ggplot(aes(x=fct_reorder(CatYearsManager,-avg.sat), y=avg.sat, fill=Attrition)) + 
+  geom_bar(stat="identity", position="dodge") + 
+  facet_wrap(~Attrition) + 
+  geom_text(aes(x=CatYearsManager, y=0, label= paste0(round(avg.sat,2))),
+            hjust=-0.5, vjust=-0.5, size=4, colour="black", fontface="italic",
+            angle=360) + coord_flip() + theme_bw() + 
+  theme(legend.position="none", strip.background = element_blank(), strip.text.x = element_blank(),
+        plot.title=element_text(hjust=0.5),axis.text.y = element_text(angle = 55)) + 
+  labs(x="Years with Current Manager",y="Average Satisfaction Score", title="Dealing with Current Managers") +
+  scale_fill_manual(values=c("#377EB8","#E41A1C"))
+
+
+# Create a Distribution by Attrition of the RelationShip Satisfaction
+rel.dist <- train_raw_tbl %>% 
+  select(RelationshipSatisfaction, Attrition) %>% 
+  group_by(Attrition) %>% 
+  ggplot(aes(x=RelationshipSatisfaction, y=..density..)) + 
+  geom_density(aes(fill=Attrition)) + 
+  facet_wrap(~Attrition) + 
+  theme_bw() + theme(legend.position="bottom", strip.background = element_blank(), strip.text.x = element_blank()) + 
+  scale_fill_manual(values=c("#377EB8","#E41A1C"))
+
+plot_grid(rel.sat, rel.dist, nrow=2)
+
+```
+
+**Generation**
+
+What is the average number of companies previously worked for each generation? My aim is to see if it is true that past generations used to stay longer in one company.
+
+-   **Employees who quit the organization**: For these type of employees we see that the boomers had a higher number of companies previously worked at.
+
+-   **Millenials**: Most millenials are still relatively young, so that explains why the number of companies for millennials is relatively low however, I expect this number to increase as the years pass by.
+
+-   **Attrition by Generation**: It seems that millennial are the ones with the highest turnover rate, followed by the boomers. What does this tell us? The newer generation which are the millennial opt to look more easy for other jobs that satisfy the needs on the other side we have the boomers which are approximating retirement and could be one of the reasons why the turnover rate of boomers is the second highest.
+
+**Understanding Generational Behavior:** Distribution of number of companies worked by `attrition` and `age`. We want to see if young people have worked in more companies than the older generation. This might prove that the millenials tend to be more picky with regards to jobs than the older generation.
+
+```{r, fig.height=7}
+# First we must create categoricals variables based on Age
+train_raw_tbl$Generation <- ifelse(train_raw_tbl$Age<37,"Millenials", 
+                        ifelse(train_raw_tbl$Age>=38 & train_raw_tbl$Age<54,"Generation X",
+                               ifelse(train_raw_tbl$Age>=54 & train_raw_tbl$Age<73,"Boomers","Silent")))
+
+
+# Let's see the distribution by generation now
+generation.dist <- train_raw_tbl %>% 
+  select(Generation, NumCompaniesWorked, Attrition) %>% 
+  ggplot() + 
+  geom_boxplot(aes(x=reorder(Generation, NumCompaniesWorked, FUN=median), y=NumCompaniesWorked, fill=Generation)) + 
+  theme_tufte() + facet_wrap(~Attrition) + 
+  scale_fill_brewer(palette="RdBu") + coord_flip() + 
+  labs(title="Knowing Past Generations",x="Generation", y="Number of Companies Previously Worked") + 
+  theme(legend.position="bottom", legend.background = element_rect(fill="#FFFFFF",size=0.5, linetype="solid", colour ="black")) +
+  theme(strip.background = element_blank(), 
+        strip.text.x = element_blank(), 
+        plot.title= element_text(hjust=0.5, color="black"), 
+        plot.background=element_rect(fill="#f2f2f2"), 
+        axis.text.x=element_text(colour="black"), 
+        axis.text.y=element_text(colour="black"),
+        axis.title=element_text(colour="black"))
+
+
+overall.avg <- train_raw_tbl %>% 
+  select(Generation, NumCompaniesWorked) %>% 
+  summarize(avg_ov=mean(NumCompaniesWorked))
+
+# Let's find the average numbers of companies worked by generation
+avg.comp <- train_raw_tbl %>% 
+  select(Generation, NumCompaniesWorked, Attrition) %>% 
+  group_by(Generation, Attrition) %>%
+  summarize(avg=mean(NumCompaniesWorked)) %>% 
+  ggplot(aes(x=Generation, y=avg, color=Attrition)) + 
+  geom_point(size=4) + theme_tufte() +  # Draw points
+  geom_segment(aes(x=Generation, xend=Generation, y=min(avg), yend=max(avg)), linetype="dashed", size=0.2, color="gray") +  
+  labs(title="", 
+       subtitle="Behavioral Difference between Generations",
+       y="Average Number of Companies worked for",
+       x="Generation") +  
+  coord_flip() + 
+  scale_color_manual(values=c("#58FA58", "#FA5858")) + 
+  theme(legend.position="bottom", legend.background = element_rect(fill="#FFFFFF", size=0.5, linetype="solid", colour ="black")) + 
+  theme(strip.background = element_blank(), 
+        strip.text.x = element_blank(), 
+        plot.title=element_text(hjust=0.5, color="black"),
+        plot.subtitle=element_text(color="black"), 
+        plot.background=element_rect(fill="#f2f2f2"), 
+        axis.text.x=element_text(colour="black"), 
+        axis.text.y=element_text(colour="black"),
+        axis.title=element_text(colour="black"))
+plot_grid(generation.dist, avg.comp, nrow=2)
+```
+
+
+### Cost of Attrition {.tabset .tabset-fade .tabset-pills}
+
+#### **Which Job Role has the highest total cost of attrition?**
+```{r, fig.height=6, fig.width=10, echo=FALSE}
+dept_job_role_tbl <- train_raw_tbl %>% 
+  select(EmployeeNumber, Department, JobRole, PerformanceRating, Attrition)
+
+# Visualization of Attrition Cost ----
+dept_job_role_tbl %>% 
+    
+    count(Department, JobRole, Attrition) %>%
+    count_to_pct(Department, JobRole) %>%
+    assess_attrition(Attrition, attrition_value = "Yes", baseline_pct = 0.088) %>%
+    mutate(
+        cost_of_attrition = calculate_attrition_cost(n = n, salary = 80000)
+    ) %>%
+    
+    plot_attrition(Department, JobRole, .value = cost_of_attrition,
+                   units = "M") +
+    labs(
+        title = "Estimated Cost of Attrition by Department & Job Role",
+        x = "Cost of Attrition", y = "",
+        subtitle = "Looks like Sales Executive and Laboratory Technician are the biggest drivers of cost"
+    )
+
+```
+
+## **Data Preparation** {.tabset .tabset-fade}
+
+
+### **Zero Variance Features**
+
+```{r}
+recipe_obj <- recipe(Attrition ~ ., data = train_readable_tbl) %>%
+    step_zv(all_predictors())
+
+recipe_obj
+```
+
+
+### **Transformation**
+
+**Skewed Features**
+```{r}
+skewed_feature_names <- train_readable_tbl %>%
+    select_if(is.numeric) %>%
+    map_df(skewness) %>%
+    gather(factor_key = T) %>%
+    arrange(desc(value)) %>%
+    filter(value >= 0.8) %>%
+    filter(!key %in% c("JobLevel", "StockOptionLevel")) %>%
+    pull(key) %>%
+    as.character()
+
+skewed_feature_names
+```
+
+
+```{r, fig.width=12}
+train_readable_tbl %>%
+    select(skewed_feature_names) %>%
+    plot_hist_facet()
+```
+
+**Transformed Features**
+```{r, fig.width=12}
+factor_names <- c("JobLevel", "StockOptionLevel")
+
+recipe_obj <- recipe(Attrition ~ ., data = train_readable_tbl) %>%
+    step_zv(all_predictors()) %>%
+    step_YeoJohnson(skewed_feature_names) %>%
+    step_mutate_at(factor_names, fn = as.factor)
+
+recipe_obj %>% 
+    prep() %>% 
+    bake(train_readable_tbl) %>%
+    select(skewed_feature_names) %>%
+    plot_hist_facet()
+```
+
+### **Center/Scaling**
+
+```{r, fig.width=12}
+recipe_obj <- recipe(Attrition ~ ., data = train_readable_tbl) %>%
+    step_zv(all_predictors()) %>%
+    step_YeoJohnson(skewed_feature_names) %>%
+    step_mutate_at(factor_names, fn = as.factor) %>%
+    step_center(all_numeric()) %>%
+    step_scale(all_numeric())
+
+prepared_recipe <- recipe_obj %>% prep()
+prepared_recipe %>%
+    bake(new_data = train_readable_tbl) %>%
+    select_if(is.numeric) %>%
+    plot_hist_facet()
+```
+
+### **Dummy Variables**
+
+```{r}
+dummied_recipe_obj <- recipe(Attrition ~ ., data = train_readable_tbl) %>%
+    step_zv(all_predictors()) %>%
+    step_YeoJohnson(skewed_feature_names) %>%
+    step_mutate_at(factor_names, fn = as.factor) %>%
+    step_center(all_numeric()) %>%
+    step_scale(all_numeric()) %>%
+    step_dummy(all_nominal())
+
+dummied_recipe_obj %>% 
+    prep() %>%
+    bake(new_data = train_readable_tbl) %>%
+    glimpse()
+```
+
+### **Final**
+```{r}
+
+recipe_obj <- recipe(Attrition ~ ., data = train_readable_tbl) %>%
+    step_zv(all_predictors()) %>%
+    step_YeoJohnson(skewed_feature_names) %>%
+    step_mutate_at(factor_names, fn = as.factor) %>%
+    step_center(all_numeric()) %>%
+    step_scale(all_numeric()) %>%
+    step_dummy(all_nominal()) %>%
+    prep()
+
+recipe_obj
+
+train_tbl <- bake(recipe_obj, new_data = train_readable_tbl)
+test_tbl <- bake(recipe_obj, new_data = test_readable_tbl)
+```
+
+
+
+## **Correlation** {.tabset .tabset-fade}
+
+```{r, echo=FALSE, eval=FALSE}
+# plot correlation fucntion
+
+get_cor <- function(data, target, use = "pairwise.complete.obs",fct_reorder = FALSE, fct_rev = FALSE) {
+  feature_expr <- enquo(target)
+  feature_name <- quo_name(feature_expr)
+  
+  data_cor <- data %>%
+    mutate_if(is.character, as.factor) %>%
+    mutate_if(is.factor, as.numeric) %>%
+    cor(use = use) %>%
+    as.tibble() %>%
+    mutate(feature = names(.)) %>%
+    select(feature, !! feature_expr) %>%
+    filter(!(feature == feature_name)) %>%
+    mutate_if(is.character, as_factor)
+  
+  if (fct_reorder) {
+    data_cor <- data_cor %>% 
+      mutate(feature = fct_reorder(feature, !! feature_expr)) %>%
+      arrange(feature)
+    }
+  if (fct_rev) {
+    data_cor <- data_cor %>% 
+      mutate(feature = fct_rev(feature)) %>%
+      arrange(feature)
+    }
+  return(data_cor)
+  
+}
+
+plot_cor <- function(data, target, fct_reorder = FALSE, fct_rev = FALSE, 
+                     include_lbl = TRUE, lbl_precision = 2, lbl_position = "outward",
+                     size = 2, line_size = 1, vert_size = 1, 
+                     color_pos = palette_light()[[1]], 
+                     color_neg = palette_light()[[2]]) {
+  feature_expr <- enquo(target)
+  feature_name <- quo_name(feature_expr)
+  
+  data_cor <- data %>%
+    get_cor(!! feature_expr, fct_reorder = fct_reorder, fct_rev = fct_rev) %>%
+    mutate(feature_name_text = round(!! feature_expr, lbl_precision)) %>%
+    mutate(Correlation = case_when((!! feature_expr) >= 0 ~ "Positive",TRUE ~ "Negative") %>% as.factor())
+  
+  g <- data_cor %>%
+    ggplot(aes_string(x = feature_name, y = "feature", group = "feature")) +
+    geom_point(aes(color = Correlation), size = size) +
+    geom_segment(aes(xend = 0, yend = feature, color = Correlation), size = line_size) +
+    geom_vline(xintercept = 0, color = palette_light()[[1]], size = vert_size) +
+    expand_limits(x = c(-1, 1)) +
+    theme_tq() +
+    scale_color_manual(values = c(color_neg, color_pos)) 
+  if (include_lbl) 
+    g <- g + geom_label(aes(label = feature_name_text), hjust = lbl_position)
+  return(g)
+    
+}
+```
+
+```{r, echo=FALSE}
+data <- train_tbl
+feature_expr <- quo(Attrition_Yes)
+
+train_tbl %>% 
+  get_cor(Attrition_Yes, fct_reorder = T, fct_rev = T)
+```
+
+
+### **Descriptive features:** 
+
+Age, Gender, and Marital status
+```{r}
+train_tbl %>%
+  select(Attrition_Yes, Age, contains("Gender"), 
+         contains("MaritalStatus"), NumCompaniesWorked, 
+         contains("Over18"), DistanceFromHome) %>%
+  plot_cor(target = Attrition_Yes, fct_reorder = T, fct_rev = F)
+```
+
+### **Employment features:** 
+
+Department, Job role, and Job level
+```{r, fig.height=7}
+train_tbl %>%
+  select(Attrition_Yes, contains("employee"), contains("department"), contains("job")) %>%
+  plot_cor(target = Attrition_Yes, fct_reorder = F, fct_rev = F)
+```
+
+### **Compensation features:** 
+
+Hourly rate, Monthly income, and Stock-option level
+```{r}
+train_tbl %>%
+  select(Attrition_Yes, contains("income"), contains("rate"), contains("salary"), contains("stock")) %>%
+  plot_cor(target = Attrition_Yes, fct_reorder = F, fct_rev = F)
+```
+
+### **Survey Results:** 
+
+Satisfaction level and Worklife balance 
+```{r, fig.height=6}
+train_tbl %>%
+  select(Attrition_Yes, contains("satisfaction"), contains("life")) %>%
+  plot_cor(target = Attrition_Yes, fct_reorder = F, fct_rev = F)
+```
+
+### **Performance Data:** 
+
+Job involvment and Performance rating
+```{r, fig.height=4}
+train_tbl %>%
+  select(Attrition_Yes, contains("performance"), contains("involvement")) %>%
+  plot_cor(target = Attrition_Yes, fct_reorder = F, fct_rev = F)
+```
+
+### **Overtime and Business Travel**
+```{r, fig.height=3}
+train_tbl %>%
+  select(Attrition_Yes, contains("overtime"), contains("travel")) %>%
+  plot_cor(target = Attrition_Yes, fct_reorder = F, fct_rev = F)
+```
+
+### **Training and Education**
+```{r}
+train_tbl %>%
+  select(Attrition_Yes, contains("training"), contains("education")) %>%
+  plot_cor(target = Attrition_Yes, fct_reorder = F, fct_rev = F)
+```
+
+### **Time-Based Features:**  
+
+Years at company and Years in current role
+```{r, fig.height=4}
+train_tbl %>%
+  select(Attrition_Yes, contains("years")) %>%
+  plot_cor(target = Attrition_Yes, fct_reorder = F, fct_rev = F)
+```
+
+
+
+## **Modeling**
+
+#### **Using Automated Machine Learning with H2o**
+
+H2o is a library that helps us implement the best machine learning models in order to come up with the most accurate predictions. What is really interesting about this library is that it does all the backend work for us that we normally do when implementing ML models. Maybe that's why it is an automated machinelearning library? What things does H2o does for us here are some of the things that I have seen while using H2o.
+
+- **Cross-Validation**: There is no need to worry about cross validation the automl function takes care of that.
+- **Parameter Optimization**: H2o takes care of finding the most appropiate parameters in order to come up with the most accurate solution.
+- **Testing Different Models**: H2o uses different models to come up with the most accurate solution.
+
+```{r}
+recipe_obj <- recipe(Attrition ~ ., data = train_readable_tbl) %>%
+    step_zv(all_predictors()) %>%
+    step_YeoJohnson(all_of(skewed_feature_names)) %>%
+    step_num2factor(JobLevel, levels = c('1', '2', '3', '4', '5')) %>%
+    step_num2factor(StockOptionLevel, levels = c('0', '1', '2', '3'), transform = function(x) {x + 1}) %>%
+    step_center(all_numeric()) %>%
+    step_scale(all_numeric()) %>%
+    prep()
+
+
+train_tbl <- bake(recipe_obj, new_data = train_readable_tbl)
+test_tbl  <- bake(recipe_obj, new_data = test_readable_tbl)
+```
+
+#### **Key Concepts**
+
+- **Training Frame** : Used to develop model.
+- **Validation Frame** : Used to tune hyperparameters via grid search.
+- **Leaderboard Frame**: Test set completely held out from model training & tuning.
+- Use `max_run_time_secs` to minimize modeling time initially. Once results look promising.
+- increase the run time to get more models with highly tuned parameters.
+
+
+First, we need to initialize the Java Virtual Machine (JVM) that H2O uses locally.
+
+```{r, results='hide'}
+h2o.init()
+```
+
+Next, we change our data to an h2o object that the package can interpret. We also split the data into training, validation, and test sets.
+
+```{r, results='hide'}
+
+split_h2o <- train_tbl %>%
+  # Putting the original dataframe into an h2o format.
+  as.h2o() %>%
+  # Splitting into training, validation and testing sets.
+  h2o.splitFrame(ratios = c(0.85), seed = 1234)
+
+# Obtaining our three types of sets into three separate values.
+train_h2o <- split_h2o[[1]]
+valid_h2o <- split_h2o[[2]]
+test_h2o  <- test_tbl %>% as.h2o()
+```
+
+Now we are ready to model. We’ll set the target and feature names. The target is what we aim to predict (in our case “Attrition”). The features (every other column) are what we will use to model the prediction.
+
+```{r}
+# Set names for h2o
+y <- "Attrition"
+x <- setdiff(names(train_h2o), y)
+
+```
+
+
+- **x = x**: The names of our feature columns.
+- **y = y**: The name of our target column.
+- **training_frame = train_h2o**: Training set consisting of 85% of the data.
+- **leaderboard_frame = valid_h2o**: Validation set. H2O uses this to ensure the model does not overfit the data.
+- **max_runtime_secs = 50**: This is to speed up H2O’s modeling. The algorithm has a large number of complex models so we want to keep things moving at the expense of some accuracy.
+
+
+```{r}
+# Run the automated machine learning 
+automl_models_h20 <- h2o.automl(
+    x = x,
+    y = y,
+    training_frame = train_h2o,
+    validation_frame = valid_h2o,
+    leaderboard_frame = test_h2o,
+    max_runtime_secs = 50,
+    nfolds = 5,
+    seed = 1234
+)
+```
+
+
+
+### **Check for the Top Models**
+
+All of the models are stored the `automl_models_h2o` object. However, we are only concerned with the leader, which is the best model in terms of accuracy on the validation set. We’ll extract it from the models object.
+
+```{r, echo=FALSE, results='hide'}
+load("h2oModel.Rda")
+```
+
+
+```{r}
+# Extract leader model
+top_models <- automl_models_h20@leaderboard
+top_models
+```
+
+
+#### **Visualize the H2O leaderboard to help with model selection.**
+
+```{r, eval=FALSE}
+
+# Visualize the H2O leaderboard to help with model selection.
+plot_h2o_visualization <- function(
+    h2o_leaderboard
+    , order_by = c("auc","logloss","aucpr","mean_per_class_error","rmse","mse")
+    , metrics_list = c("auc","logloss","aucpr","mean_per_class_error","rmse","mse")
+    , n_max = 20
+    , size = 4
+    , include_lbl = TRUE
+) {
+    
+    # Setup Inputs
+    order_by     <- tolower(order_by[[1]])
+    metrics_list <- tolower(metrics_list)
+    
+    leaderboard_tbl <- h2o_leaderboard %>%
+        as_tibble() %>%
+        mutate(model_type = str_split(model_id, "_", simplify = TRUE)[, 1]) %>%
+        rownames_to_column(var = "rowname") %>%
+        mutate(model_id = paste0(
+            rowname
+            , ". "
+            , as.character(model_id)
+            ) 
+            %>% as.factor()
+        ) %>%
+        select(rowname, model_id, model_type, all_of(metrics_list), all_of(order_by))
+    
+    # Transformation
+    if(order_by == "auc") {
+        
+        data_transformed_tbl <- leaderboard_tbl %>%
+            slice(1:n_max) %>%
+            mutate(
+                model_id = as_factor(model_id) %>% 
+                    fct_reorder(auc)
+                , model_type = as.factor(model_type)
+            ) %>%
+            pivot_longer(
+                cols = c(-model_id, -model_type, -rowname)
+                , names_to = "key"
+                , values_to = "value"
+                , names_ptypes = list(key = factor())
+            )
+        
+    } else if (order_by == "logloss") {
+        data_transformed_tbl <- leaderboard_tbl %>%
+            slice(1:n_max) %>%
+            mutate(
+                model_id = as_factor(model_id) %>% 
+                    fct_reorder(logloss) %>% 
+                    fct_rev()
+                , model_type = as.factor(model_type)
+            ) %>%
+            pivot_longer(
+                cols = c(-model_id, -model_type, -rowname)
+                , names_to = "key"
+                , values_to = "value"
+                , names_ptypes = list(key = factor())
+            )
+    } else {
+        stop(paste0("order_by = '", order_by, " is not currently supported. Use auc or logloss"))
+    }
+    
+    # Viz
+    g <- data_transformed_tbl %>%
+        ggplot(
+            aes(
+                x = value
+                , y = model_id
+                , color = model_type
+            )
+        ) +
+        geom_point(size = size) +
+        facet_wrap(~ key, scales = "free_x") +
+        theme_tq() +
+        scale_color_tq() +
+        labs(
+            title = "H2O Leaderboard Metrics"
+            , subtitle = paste0("Ordered by: ", toupper(order_by))
+            , y = "Model Position and ID"
+            , x = ""
+        )
+    
+    if(include_lbl) g <- g +
+            geom_label(
+                aes(
+                    label = round(value, 2)
+                    , hjust = "inward"
+                )
+            )
+    
+    return(g)
+}
+
+
+plot_h2o_visualization(
+    automl_models_h20@leaderboard
+    , order_by = c("auc")
+    , metrics_list = c("auc","aucpr")
+    , size = 3
+    , n_max = 10
+)
+```
+
+```{r, out.width="100%", fig.align="center", echo=FALSE}
+include_graphics("04_Modeling/final_model.png")
+```
+
+#### **Top 3 Models**
+
+```{r}
+deep_learning_model <- h2o.loadModel("04_Modeling/h2o_models/DeepLearning_grid__1_AutoML_20201019_093752_model_1")
+glm_model <- h2o.loadModel("04_Modeling/h2o_models/GLM_1_AutoML_20201019_093752")
+stacked_ensemble_model <- h2o.loadModel("04_Modeling/h2o_models/StackedEnsemble_BestOfFamily_AutoML_20201019_093752")
+```
+
+
+## **Prediction**
+
+Now we are ready to predict on our test set, which is unseen from during our modeling process. This is the true test of performance. We use the `h2o.predict()` function to make predictions.
+
+```{r, results='hide'}
+
+prediction <- h2o.predict(
+    stacked_ensemble_model, # stacked_ensemble_model
+    newdata = as.h2o(test_tbl)
+)
+```
+
+```{r}
+# Saving it as a tibble
+prediction_tbl <- prediction %>% as_tibble()
+prediction_tbl
+```
+
+
+
+## **Performance** 
+
+```{r}
+performance_Deep_Learning <- h2o.performance(deep_learning_model, newdata = test_h2o)
+performance_glm_model <-  h2o.performance(glm_model, newdata = test_h2o)
+performance_Stacked_Ensemble <- h2o.performance(stacked_ensemble_model, newdata = test_h2o)
+
+```
+
+Now we can evaluate our leader model. We’ll reformat the test set an add the predictions as column so we have the actual and prediction columns side-by-side.
+
+```{r}
+# Prep for performance assessment
+test_performance <- test_h2o %>%
+    tibble::as_tibble() %>%
+    select(Attrition) %>%
+    add_column(pred = as.vector(prediction$predict)) %>%
+    mutate_if(is.character, as.factor)
+test_performance
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+### **Classifier Summary Metrics**
+# Thresholds and metric scores
+performance_glm_model@metrics$thresholds_and_metric_scores
+
+# Max criteria and metric scores
+performance_glm_model@metrics$max_criteria_and_metric_scores
+
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+h2o.auc(performance_Deep_Learning)
+h2o.giniCoef(performance_Deep_Learning)
+h2o.logloss(performance_Deep_Learning)
+
+```
+
+### **Confusion Matrix**
+
+#### **Deep Learning Model**
+```{r}
+DL_confusion_matrix <- h2o.confusionMatrix(performance_Deep_Learning)
+DL_confusion_matrix
+```
+
+
+#### **GLM Model**
+
+```{r}
+GLM_confusion_matrix <- h2o.confusionMatrix(performance_glm_model)
+GLM_confusion_matrix
+```
+
+
+#### **Stacked Ensemble Model**
+
+```{r}
+Stacked_confusion_matrix <- h2o.confusionMatrix(performance_Stacked_Ensemble)
+Stacked_confusion_matrix
+```
+
+
+### **What’s important to HR.**
+
+**Precision** is when the model predicts yes, how often is it actually `yes`. **Recall** (also true positive rate or specificity) is when the actual value is `yes` **how often is the model correct**.
+
+Most HR groups would probably prefer to incorrectly classify folks not looking to quit as high potential of quiting rather than classify those that are likely to quit as not at risk. Because it’s important to not miss at risk employees, **HR will really care about recall** or **when the actual value is Attrition = YES how often the model predicts YES**.
+
+
+Recall for our model is **67%**. In an HR context, this is **67% more employees that could potentially be targeted prior to quiting**. From that standpoint, an organization that loses 100 people per year could possibly target 67 implementing measures to retain.
+
+
+```{r}
+
+# Performance analysis
+tn <- GLM_confusion_matrix$No[1]
+tp <- GLM_confusion_matrix$Yes[2]
+fp <- GLM_confusion_matrix$Yes[1]
+fn <- GLM_confusion_matrix$No[2]
+
+accuracy <- (tp + tn) / (tp + tn + fp + fn)
+misclassification_rate <- 1 - accuracy
+recall <- tp / (tp + fn)
+precision <- tp / (tp + fp)
+null_error_rate <- tn / (tp + tn + fp + fn)
+
+tibble(
+    accuracy,
+    misclassification_rate,
+    recall,
+    precision,
+    null_error_rate
+) %>% 
+    transpose() 
+```
+
+### **Performance Diagnostic Dashboard**
+
+Containing an ROC Plot, Precision vs Recall Plot, Gain Plot, and Lift Plot
+
+```{r, fig.height=9, fig.width=10, eval=FALSE}
+
+plot_h2o_performance <- function(
+    h2o_leaderboard
+    , newdata
+    , order_by = c("auc","logloss")
+    , max_models = 3
+    , size = 1.5
+) {
+    
+    # Inputs
+    leaderboard_tbl <- h2o_leaderboard %>%
+        as_tibble() %>%
+        slice(1:max_models)
+    
+    newdata_tbl <- newdata %>%
+        as_tibble()
+    
+    order_by <- tolower(order_by[[1]])
+    order_by_expr <- rlang::sym(order_by)
+    
+    h2o.no_progress()
+    
+    # 1. Model Metrics ----
+    get_model_performance_metrics <- function(model_id, test_tbl) {
+        
+        model_h2o <- h2o.getModel(model_id)
+        perf_h2o <- h2o.performance(model_h2o, newdata = as.h2o(test_tbl))
+        
+        perf_h2o %>%
+            h2o.metric() %>%
+            as_tibble() %>%
+            select(threshold, tpr, fpr, precision, recall)
+        
+    }
+    
+    model_metrics_tbl <- leaderboard_tbl %>%
+        mutate(metrics = map(model_id, get_model_performance_metrics, newdata_tbl)) %>%
+        unnest(metrics) %>%
+        mutate(
+            model_id = as_factor(model_id) %>%
+                fct_reorder({{ order_by_expr }}, .desc = ifelse(order_by == "auc", TRUE, FALSE))
+            , auc = auc %>%
+                round(3) %>%
+                as.character() %>%
+                as_factor() %>%
+                fct_reorder(as.numeric(model_id))
+            , logloss = logloss %>%
+                round(4) %>%
+                as.character() %>%
+                as_factor() %>%
+                fct_reorder(as.numeric(model_id))
+        )
+    
+    # 1A. ROC Plot ----
+    p1 <- model_metrics_tbl %>%
+        ggplot(
+            mapping = aes_string(
+                "fpr","tpr", color = "model_id", linetype = order_by
+            )
+        ) +
+        geom_line(size = size) +
+        theme_tq() +
+        scale_color_tq() +
+        labs(
+            title = "ROC"
+            , subtitle = "True Positive Rate vs False Positive Rate"
+            , x = "FPR"
+            , y = "TPR"
+        ) +
+        theme(legend.direction = "vertical")
+    
+    # 1B. Precision vs Recall ----
+    p2 <- model_metrics_tbl %>%
+        ggplot(
+            mapping = aes_string(
+                x = "recall"
+                , y = "precision"
+                , color = "model_id"
+                , linetype = order_by
+            )
+        ) +
+        geom_line(size = size) +
+        geom_vline(
+            xintercept = h2o.find_threshold_by_max_metric(performance_Deep_Learning, "f1")
+            , color = "green"
+            , size = size
+            , linetype = "dashed"
+        ) +
+        theme_tq() +
+        scale_color_tq() +
+        labs(
+            title = "Precision vs Recall"
+            , subtitle = "Green Line indicates Best Threshold"
+            , x = "Recall"
+            , y = "Precision"
+        ) +
+        theme(legend.position = "none")
+    
+    # 2. Gain / Lift ----
+    
+    get_gain_lift <- function(model_id, test_tbl) {
+        
+        model_h2o <- h2o.getModel(model_id)
+        perf_h2o <- h2o.performance(model_h2o, newdata = as.h2o(test_tbl))
+        
+        perf_h2o %>%
+            h2o.gainsLift() %>%
+            as_tibble() %>%
+            select(group, cumulative_data_fraction, cumulative_capture_rate, cumulative_lift)
+        
+    }
+    
+    gain_lift_tbl <- leaderboard_tbl %>%
+        mutate(metrics = map(model_id, get_gain_lift, newdata_tbl)) %>%
+        unnest(metrics) %>%
+        mutate(
+            model_id = as_factor(model_id) %>%
+                fct_reorder({{ order_by_expr }}, .desc = ifelse(order_by == "auc", TRUE, FALSE))
+            , auc = auc %>%
+                round(3) %>%
+                as.character() %>%
+                as_factor() %>%
+                fct_reorder(as.numeric(model_id))
+            , logloss = logloss %>%
+                round(4) %>%
+                as.character() %>%
+                as_factor() %>%
+                fct_reorder(as.numeric(model_id))
+        ) %>%
+        dplyr::rename(
+            gain = cumulative_capture_rate
+            , lift = cumulative_lift
+        )
+    
+    # 2A. Gain Plot ----
+    
+    p3 <- gain_lift_tbl %>%
+        ggplot(
+            mapping = aes_string(
+                x = "cumulative_data_fraction"
+                , y = "gain"
+                , color = "model_id"
+                , linetype = order_by
+            )
+        ) +
+        geom_line(size = size) +
+        geom_segment(x = 0, y = 0, xend = 1, yend = 1, color = "black", size = size) +
+        theme_tq() +
+        scale_color_tq() +
+        expand_limits(x = c(0,1), y = c(0,1)) +
+        labs(
+            title = "Gain"
+            , subtitle = "Cumulative Lift"
+            , x = "Cumulative Data Fraction"
+            , y = "Gain"
+        ) +
+        theme(legend.position = "none")
+    
+    # 2B. Lift Plot ----
+    
+    p4 <- gain_lift_tbl %>%
+        ggplot(
+            mapping = aes_string(
+                x = "cumulative_data_fraction"
+                , y = "lift"
+                , color = "model_id"
+                , linetype = order_by
+            )
+        ) +
+        geom_line(size = size) +
+        geom_segment(x = 0, y = 1, xend = 1, yend = 1, color = "black", size = size) +
+        theme_tq() +
+        scale_color_tq() +
+        expand_limits(x = c(0,1), y = c(0,1)) +
+        labs(
+            title = "Lift"
+            , subtitle = "Model Value Add vs Baseline"
+            , x = "Cumulative Data Fraction"
+            , y = "Lift"
+        ) +
+        theme(legend.position = "none")
+    
+    # Combine using cowplot ----
+    
+    p_legend <- get_legend(p1)
+    p1 <- p1 + theme(legend.position = "none")
+    
+    p <- cowplot::plot_grid(p1, p2, p3, p4, ncol = 2)
+    
+    p_title <- ggdraw() +
+        draw_label(
+            "H2O Model Metrics"
+            , size = 18
+            , fontface = "bold"
+            , color = palette_light()[[1]]
+        )
+    
+    p_subtitle <- ggdraw() +
+        draw_label(
+            glue("Ordered by {toupper(order_by)}")
+            , size = 10
+            , color = palette_light()[[1]]
+        )
+    
+    ret <- plot_grid(
+        p_title
+        , p_subtitle
+        , p
+        , p_legend
+        , ncol = 1
+        , rel_heights = c(0.05, 0.05, 1, 0.05 * max_models)
+    )
+    
+    h2o.show_progress()
+    
+    return(ret)
+    
+}
+
+plot_h2o_performance(
+    h2o_leaderboard = automl_models_h20@leaderboard
+    , newdata = test_tbl
+    , order_by = "auc"
+    , max_models = 3
+)
+
+```
+
+```{r, out.width="100%", fig.align="center", echo=FALSE}
+include_graphics("04_Modeling/perf.png")
+```
+
+## **What causes attrition**
+
+### **Local Interpretable Model-agnostic Explanations (LIME)** for Black-Box Model Explanation.
+
+
+The machine learning model predicts the probability of someone leaving the company. This probability is then converted to a prediction of either leave or stay through a process called **Binary Classification**. However, this doesn’t solve the main objective, which is to make better decisions. It only tells us which employees are highest risk and therefore high probability. We can hone in on these individuals, but we need a different tool to understand why an individual is leaving.
+
+**Explanations are MORE CRITICAL to the business than PERFORMANCE**. Think about it. What good is a high performance model that predicts employee attrition if we can’t tell **what features are causing people to quit?** We need explanations to improve business decision making. Not just performance.
+
+
+The first thing we need to do is identify the class of our model leader object. We do this with the class() function.
+
+```{r}
+class(glm_model)
+```
+
+Next we create our `model_type` function. It’s only input is x the h2o model. The function simply returns “classification”, which tells LIME we are classifying.
+
+```{r}
+# Setup lime::model_type() function for h2o
+model_type.H2OBinomialModel <- function(x, ...) {
+    # Function tells lime() what model type we are dealing with
+    # 'classification', 'regression', 'survival', 'clustering', 'multilabel', etc
+    #
+    # x is our h2o model
+    
+    return("classification")
+}
+```
+
+Now we can create our `predict_model` function. Inputs must be `x` a model, `newdata` a dataframe object and `type` which is not used but can be use to switch the output type. The output is a little tricky because it must be in the format of probabilities by classification. 
+
+```{r}
+# Setup lime::predict_model() function for h2o
+predict_model.H2OBinomialModel <- function(x, newdata, type, ...) {
+    # Function performs prediction and returns dataframe with Response
+    #
+    # x is h2o model
+    # newdata is data frame
+    # type is only setup for data frame
+    
+    pred <- h2o.predict(x, as.h2o(newdata))
+    
+    # return probs
+    return(as.data.frame(pred[,-1]))
+    
+}
+```
+
+This will show you what the output looks like and to test our `predict_model` function. See how it’s the probabilities by classification. It must be in this form for model_type = “classification”.
+
+```{r}
+# Test our predict_model() function
+predict_model(x = glm_model, newdata = as.data.frame(test_h2o[,-1]), type = 'raw') %>%
+    tibble::as_tibble()
+```
+
+
+Now the fun part, we create an **explainer** using the `lime()` function. Just pass the training data set without the “Attribution column”. The form must be a data frame, which is OK since our `predict_model` function will switch it to an h2o object. Set model = models our leader model, and bin_continuous = FALSE. We could tell the algorithm to bin continuous variables, but this may not make sense for categorical numeric data that we didn’t change to factors.
+
+
+```{r}
+# Run lime() on training set
+explainer <- lime::lime(
+    as.data.frame(train_h2o[,-1]), 
+    model = glm_model, 
+    bin_continuous = FALSE)
+```
+
+Now we run the explain() function, which returns our explanation. This can take a minute to run so we limit it to just the first ten rows of the test data set.
+
+- **n_labels = 1**: Explaining a single class.
+- **n_features = 4**: Returns the top four features that are critical to each case. 
+- **kernel_width = 0.5**: Allows us to increase the “model_r2” value by shrinking the localized evaluation.
+
+```{r}
+# Run explain() on explainer
+explanation <- lime::explain(
+    as.data.frame(test_h2o[5:14,-1]), 
+    explainer = explainer, 
+    n_labels = 1, 
+    n_features = 4,
+    kernel_width = 0.5)
+```
+
+### **Feature Importance Visualization**
+
+The payoff for the work we put in using LIME is this **feature importance plot**. This allows us to visualize each of the ten cases (observations) from the test data. The top four features for each case are shown. Note that they are not the same for each case.
+
+- The blue bars mean that the feature **supports** the model conclusion.
+- The red bars **contradict**. 
+
+We’ll focus in on Cases with Label = Yes, which are predicted to have attrition. We can see a common theme with Case 1 and Case 7: Monthly income, Years at the company , No. of companies worked and Over Time are among the top factors influencing attrition. 
+
+```{r, fig.height=12, fig.width=12}
+plot_features(explanation) +
+    labs(title = "HR Predictive Analytics: LIME Feature Importance Visualization",
+         subtitle = "Hold Out (Test) Set, First 10 Cases Shown")
+```
+
+
