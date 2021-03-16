@@ -1,4 +1,4 @@
-# [Business Science Case Study](https://shejz.github.io/businesscience/)
+### [View Website](https://shejz.github.io/businesscience/)
 
 ## **Business Science**
 
