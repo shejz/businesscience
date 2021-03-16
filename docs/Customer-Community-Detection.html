@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Customer Community Network Detection.</title>
+
+<script src="site_libs/header-attrs-2.3/header-attrs.js"></script>
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Business Science</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="Anomaly.html">Anomaly Detection</a>
+</li>
+<li>
+  <a href="instacart_market_basket_analysis.html">Market Basket Analysis</a>
+</li>
+<li>
+  <a href="Customer-Community-Detection.html">Network Analysis</a>
+</li>
+<li>
+  <a href="Employee_Attrition.html">Churn</a>
+</li>
+<li>
+  <a href="Bike.html">Product Analytics</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Customer Community Network Detection.</h1>
+
+</div>
+
+
+<div id="business-understanding" class="section level2">
+<h2>Business Understanding</h2>
+<p>As marketers, we often fall into the trap of trying to please everyone. This is a massive mistake that can end in disaster. What if there was a way to customize products to a specific group of people and have them go viral?</p>
+<ul>
+<li>Understanding the strength of the relationship and which customers are more important to analyze.</li>
+<li>How to use Network Analysis to identify the most influential customer networks within your customer-base. It’s then easy to cater products to them. The result is that products are much more likely to go viral!</li>
+<li>Increase your customer segmentation explainability</li>
+</ul>
+</div>
+<div id="network-analysis" class="section level2 tabset tabset-fade tabset-pills">
+<h2 class="tabset tabset-fade tabset-pills">Network Analysis</h2>
+<div id="community-detection" class="section level3">
+<h3>Community Detection</h3>
+<p><strong>Community Detection</strong> is one of the fundamental problems in network analysis, where the goal is to find groups of nodes that are, in some sense, more similar to each other than to the other nodes.</p>
+<p>Communities or clusters are usually groups of vertices having higher probability of being connected to each other than to members of other groups.</p>
+</div>
+<div id="network-types" class="section level3">
+<h3>Network Types</h3>
+<p>There are two types of network Analysis:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Undirected</strong> Strength of Relationship<br />
+</li>
+<li><strong>Directed</strong> Hierarchical Structure</li>
+</ol>
+<p>I will be using <strong>Undirected</strong> (Strength of Relationship) for Clustering.</p>
+</div>
+</div>
+<div id="preparations" class="section level2 tabset tabset-fade">
+<h2 class="tabset tabset-fade">Preparations</h2>
+<div id="load-libraries" class="section level3">
+<h3>Load libraries</h3>
+<pre class="r"><code>library(tidyverse)
+library(tidyquant)
+
+# EDA
+library(DataExplorer)
+library(correlationfunnel)
+
+# Pre-processing
+library(recipes)
+
+# Network Analysis
+library(tidygraph)
+library(ggraph)
+
+library(knitr)</code></pre>
+</div>
+<div id="data" class="section level3">
+<h3>Data</h3>
+<pre class="r"><code>credit_card_tbl &lt;- read_csv(&quot;data/CC GENERAL.csv&quot;)</code></pre>
+</div>
+<div id="glimpse" class="section level3">
+<h3>Glimpse</h3>
+<pre class="r"><code>credit_card_tbl %&gt;% glimpse()</code></pre>
+<pre><code>## Rows: 8,950
+## Columns: 18
+## $ CUST_ID                          &lt;chr&gt; &quot;C10001&quot;, &quot;C10002&quot;, &quot;C10003&quot;, &quot;C10...
+## $ BALANCE                          &lt;dbl&gt; 40.90075, 3202.46742, 2495.14886, ...
+## $ BALANCE_FREQUENCY                &lt;dbl&gt; 0.818182, 0.909091, 1.000000, 0.63...
+## $ PURCHASES                        &lt;dbl&gt; 95.40, 0.00, 773.17, 1499.00, 16.0...
+## $ ONEOFF_PURCHASES                 &lt;dbl&gt; 0.00, 0.00, 773.17, 1499.00, 16.00...
+## $ INSTALLMENTS_PURCHASES           &lt;dbl&gt; 95.40, 0.00, 0.00, 0.00, 0.00, 133...
+## $ CASH_ADVANCE                     &lt;dbl&gt; 0.0000, 6442.9455, 0.0000, 205.788...
+## $ PURCHASES_FREQUENCY              &lt;dbl&gt; 0.166667, 0.000000, 1.000000, 0.08...
+## $ ONEOFF_PURCHASES_FREQUENCY       &lt;dbl&gt; 0.000000, 0.000000, 1.000000, 0.08...
+## $ PURCHASES_INSTALLMENTS_FREQUENCY &lt;dbl&gt; 0.083333, 0.000000, 0.000000, 0.00...
+## $ CASH_ADVANCE_FREQUENCY           &lt;dbl&gt; 0.000000, 0.250000, 0.000000, 0.08...
+## $ CASH_ADVANCE_TRX                 &lt;dbl&gt; 0, 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ PURCHASES_TRX                    &lt;dbl&gt; 2, 0, 12, 1, 1, 8, 64, 12, 5, 3, 1...
+## $ CREDIT_LIMIT                     &lt;dbl&gt; 1000, 7000, 7500, 7500, 1200, 1800...
+## $ PAYMENTS                         &lt;dbl&gt; 201.8021, 4103.0326, 622.0667, 0.0...
+## $ MINIMUM_PAYMENTS                 &lt;dbl&gt; 139.50979, 1072.34022, 627.28479, ...
+## $ PRC_FULL_PAYMENT                 &lt;dbl&gt; 0.000000, 0.222222, 0.000000, 0.00...
+## $ TENURE                           &lt;dbl&gt; 12, 12, 12, 12, 12, 12, 12, 12, 12...</code></pre>
+</div>
+</div>
+<div id="customer-segmentation-workflow" class="section level2">
+<h2>Customer Segmentation Workflow</h2>
+<p><img src="images/Customer%20Segmentation%20Workflow.png" width="100%" style="display: block; margin: auto;" /></p>
+<div id="exploratory-data-analysis-eda" class="section level3">
+<h3>Exploratory Data Analysis (EDA)</h3>
+<pre class="r"><code>plot_missing(credit_card_tbl)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-4-1.png" width="960" /></p>
+</div>
+<div id="missing-data" class="section level3 tabset tabset-fade">
+<h3 class="tabset tabset-fade">Missing Data</h3>
+<div id="minimum-payments" class="section level4">
+<h4>Minimum Payments</h4>
+<p>Minimum Payments has NA (missing data)</p>
+<pre class="r"><code># Quantile 
+credit_card_tbl %&gt;%
+    pull(MINIMUM_PAYMENTS) %&gt;%
+    quantile(na.rm = TRUE)</code></pre>
+<pre><code>##           0%          25%          50%          75%         100% 
+##     0.019163   169.123707   312.343947   825.485459 76406.207520</code></pre>
+<div id="correlation-funnel" class="section level5">
+<h5>Correlation Funnel</h5>
+<pre class="r"><code># Filter all non-missing data
+credit_card_no_missing_tbl &lt;- credit_card_tbl %&gt;%
+    select_if(is.numeric) %&gt;%
+    filter(!is.na(MINIMUM_PAYMENTS)) %&gt;%
+    filter(!is.na(CREDIT_LIMIT)) 
+
+credit_card_no_missing_tbl %&gt;%
+    binarize() %&gt;%
+    correlate(target = MINIMUM_PAYMENTS__825.49646275_Inf) %&gt;% # Largest bin for minimum payment
+    plot_correlation_funnel()</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-6-1.png" width="960" /></p>
+</div>
+<div id="linear-model-lm" class="section level5">
+<h5>Linear Model (lm)</h5>
+<pre class="r"><code>credit_card_tbl %&gt;%
+    ggplot(aes(BALANCE, MINIMUM_PAYMENTS)) + 
+    geom_point(alpha = 0.25) +
+    geom_smooth(method = &quot;lm&quot;)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-7-1.png" width="960" /></p>
+</div>
+</div>
+<div id="credit-limit" class="section level4">
+<h4>Credit Limit</h4>
+<p>Credit Limit has NA (missing data)</p>
+<pre class="r"><code># Quantile
+credit_card_tbl %&gt;%
+    pull(CREDIT_LIMIT) %&gt;%
+    quantile(na.rm = TRUE)</code></pre>
+<pre><code>##    0%   25%   50%   75%  100% 
+##    50  1600  3000  6500 30000</code></pre>
+<div id="correlation-funnel-1" class="section level5">
+<h5>Correlation Funnel</h5>
+<pre class="r"><code>credit_card_no_missing_tbl %&gt;%
+    binarize() %&gt;%
+    correlate(target = CREDIT_LIMIT__6500_Inf) %&gt;% # Largest credit limit bin
+    plot_correlation_funnel()</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-9-1.png" width="960" /></p>
+</div>
+<div id="linear-model-lm-1" class="section level5">
+<h5>Linear Model (lm)</h5>
+<pre class="r"><code>credit_card_tbl %&gt;%
+  ggplot(aes(BALANCE, CREDIT_LIMIT)) + 
+  geom_point(alpha = 0.25) +
+  geom_smooth(method = &quot;lm&quot;)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-10-1.png" width="960" /></p>
+</div>
+</div>
+</div>
+<div id="pre-processing" class="section level3">
+<h3>Pre-processing</h3>
+<div id="imputation-and-standardized" class="section level4">
+<h4>Imputation and Standardized</h4>
+<pre class="r"><code>rec_obj &lt;- recipe(~ ., data = credit_card_tbl) %&gt;%
+    # Random Forest Imputation
+    step_bagimpute(MINIMUM_PAYMENTS, CREDIT_LIMIT) %&gt;%
+    # Scale &amp; Center for relationship analysis           
+    step_center(all_numeric()) %&gt;%
+    step_scale(all_numeric()) %&gt;%
+    prep()
+
+train_tbl &lt;- bake(rec_obj, new_data = credit_card_tbl)
+train_tbl</code></pre>
+<pre><code>## # A tibble: 8,950 x 18
+##    CUST_ID BALANCE BALANCE_FREQUEN~ PURCHASES ONEOFF_PURCHASES INSTALLMENTS_PU~
+##    &lt;fct&gt;     &lt;dbl&gt;            &lt;dbl&gt;     &lt;dbl&gt;            &lt;dbl&gt;            &lt;dbl&gt;
+##  1 C10001  -0.732            -0.249   -0.425           -0.357           -0.349 
+##  2 C10002   0.787             0.134   -0.470           -0.357           -0.455 
+##  3 C10003   0.447             0.518   -0.108            0.109           -0.455 
+##  4 C10004   0.0491           -1.02     0.232            0.546           -0.455 
+##  5 C10005  -0.359             0.518   -0.462           -0.347           -0.455 
+##  6 C10006   0.118             0.518    0.154           -0.357            1.02  
+##  7 C10007  -0.450             0.518    2.85             3.50             0.307 
+##  8 C10008   0.125             0.518   -0.265           -0.357            0.0278
+##  9 C10009  -0.264             0.518   -0.0663           0.0416          -0.233 
+## 10 C10010  -0.678            -1.40     0.130            0.415           -0.455 
+## # ... with 8,940 more rows, and 12 more variables: CASH_ADVANCE &lt;dbl&gt;,
+## #   PURCHASES_FREQUENCY &lt;dbl&gt;, ONEOFF_PURCHASES_FREQUENCY &lt;dbl&gt;,
+## #   PURCHASES_INSTALLMENTS_FREQUENCY &lt;dbl&gt;, CASH_ADVANCE_FREQUENCY &lt;dbl&gt;,
+## #   CASH_ADVANCE_TRX &lt;dbl&gt;, PURCHASES_TRX &lt;dbl&gt;, CREDIT_LIMIT &lt;dbl&gt;,
+## #   PAYMENTS &lt;dbl&gt;, MINIMUM_PAYMENTS &lt;dbl&gt;, PRC_FULL_PAYMENT &lt;dbl&gt;,
+## #   TENURE &lt;dbl&gt;</code></pre>
+</div>
+<div id="adjacency-matrix" class="section level4">
+<h4>Adjacency Matrix</h4>
+<p>To compare all features to see what customers correlate or related together.</p>
+<pre class="r"><code>customer_correlation_matrix &lt;- train_tbl %&gt;%
+    
+    # Transpose data for customer similarity
+    gather(key = &quot;FEATURE&quot;, value = &quot;value&quot;, -CUST_ID, factor_key = TRUE) %&gt;%
+    spread(key = CUST_ID, value = value) %&gt;%
+    select(-FEATURE) %&gt;%
+    
+    # Adjacency Matrix - Perform Similarity using Correlation
+    as.matrix() %&gt;%
+    cor()</code></pre>
+</div>
+<div id="customer-correlation-matrix" class="section level4">
+<h4>Customer Correlation Matrix</h4>
+<p>This is adjacency matrix that show how every customers are correlated against the other customers. <strong>Relationshiop Between Each Customers</strong></p>
+<pre class="r"><code>customer_correlation_matrix %&gt;% as_tibble(rownames = &quot;CUST_ID&quot;)</code></pre>
+<pre><code>## # A tibble: 8,950 x 8,951
+##    CUST_ID  C10001  C10002  C10003  C10004  C10005 C10006  C10007  C10008 C10009
+##    &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;
+##  1 C10001   1       0.0842 -0.171   0.125   0.807   0.386 -0.193   0.0384 0.279 
+##  2 C10002   0.0842  1      -0.276   0.249   0.207  -0.360 -0.444  -0.469  0.0102
+##  3 C10003  -0.171  -0.276   1       0.0913  0.0823 -0.156  0.292  -0.0332 0.266 
+##  4 C10004   0.125   0.249   0.0913  1       0.0420 -0.345  0.222  -0.496  0.464 
+##  5 C10005   0.807   0.207   0.0823  0.0420  1       0.269 -0.221  -0.0653 0.434 
+##  6 C10006   0.386  -0.360  -0.156  -0.345   0.269   1     -0.271   0.696  0.185 
+##  7 C10007  -0.193  -0.444   0.292   0.222  -0.221  -0.271  1      -0.0878 0.214 
+##  8 C10008   0.0384 -0.469  -0.0332 -0.496  -0.0653  0.696 -0.0878  1      0.125 
+##  9 C10009   0.279   0.0102  0.266   0.464   0.434   0.185  0.214   0.125  1     
+## 10 C10010  -0.0500  0.135   0.226   0.860  -0.168  -0.390  0.433  -0.440  0.508 
+## # ... with 8,940 more rows, and 8,941 more variables: C10010 &lt;dbl&gt;,
+## #   C10011 &lt;dbl&gt;, C10012 &lt;dbl&gt;, C10013 &lt;dbl&gt;, C10014 &lt;dbl&gt;, C10015 &lt;dbl&gt;,
+## #   C10016 &lt;dbl&gt;, C10017 &lt;dbl&gt;, C10018 &lt;dbl&gt;, C10019 &lt;dbl&gt;, C10020 &lt;dbl&gt;,
+## #   C10021 &lt;dbl&gt;, C10022 &lt;dbl&gt;, C10023 &lt;dbl&gt;, C10024 &lt;dbl&gt;, C10025 &lt;dbl&gt;,
+## #   C10026 &lt;dbl&gt;, C10027 &lt;dbl&gt;, C10028 &lt;dbl&gt;, C10029 &lt;dbl&gt;, C10030 &lt;dbl&gt;,
+## #   C10031 &lt;dbl&gt;, C10032 &lt;dbl&gt;, C10033 &lt;dbl&gt;, C10034 &lt;dbl&gt;, C10035 &lt;dbl&gt;,
+## #   C10036 &lt;dbl&gt;, C10037 &lt;dbl&gt;, C10038 &lt;dbl&gt;, C10039 &lt;dbl&gt;, C10040 &lt;dbl&gt;,
+## #   C10041 &lt;dbl&gt;, C10043 &lt;dbl&gt;, C10044 &lt;dbl&gt;, C10045 &lt;dbl&gt;, C10046 &lt;dbl&gt;,
+## #   C10047 &lt;dbl&gt;, C10048 &lt;dbl&gt;, C10049 &lt;dbl&gt;, C10050 &lt;dbl&gt;, C10051 &lt;dbl&gt;,
+## #   C10052 &lt;dbl&gt;, C10053 &lt;dbl&gt;, C10054 &lt;dbl&gt;, C10055 &lt;dbl&gt;, C10056 &lt;dbl&gt;,
+## #   C10057 &lt;dbl&gt;, C10058 &lt;dbl&gt;, C10059 &lt;dbl&gt;, C10060 &lt;dbl&gt;, C10061 &lt;dbl&gt;,
+## #   C10062 &lt;dbl&gt;, C10063 &lt;dbl&gt;, C10064 &lt;dbl&gt;, C10065 &lt;dbl&gt;, C10067 &lt;dbl&gt;,
+## #   C10068 &lt;dbl&gt;, C10069 &lt;dbl&gt;, C10070 &lt;dbl&gt;, C10071 &lt;dbl&gt;, C10072 &lt;dbl&gt;,
+## #   C10073 &lt;dbl&gt;, C10074 &lt;dbl&gt;, C10075 &lt;dbl&gt;, C10077 &lt;dbl&gt;, C10078 &lt;dbl&gt;,
+## #   C10079 &lt;dbl&gt;, C10080 &lt;dbl&gt;, C10081 &lt;dbl&gt;, C10082 &lt;dbl&gt;, C10083 &lt;dbl&gt;,
+## #   C10084 &lt;dbl&gt;, C10085 &lt;dbl&gt;, C10086 &lt;dbl&gt;, C10087 &lt;dbl&gt;, C10088 &lt;dbl&gt;,
+## #   C10089 &lt;dbl&gt;, C10090 &lt;dbl&gt;, C10092 &lt;dbl&gt;, C10093 &lt;dbl&gt;, C10094 &lt;dbl&gt;,
+## #   C10095 &lt;dbl&gt;, C10096 &lt;dbl&gt;, C10097 &lt;dbl&gt;, C10098 &lt;dbl&gt;, C10099 &lt;dbl&gt;,
+## #   C10100 &lt;dbl&gt;, C10101 &lt;dbl&gt;, C10102 &lt;dbl&gt;, C10103 &lt;dbl&gt;, C10104 &lt;dbl&gt;,
+## #   C10105 &lt;dbl&gt;, C10106 &lt;dbl&gt;, C10107 &lt;dbl&gt;, C10108 &lt;dbl&gt;, C10109 &lt;dbl&gt;,
+## #   C10110 &lt;dbl&gt;, C10111 &lt;dbl&gt;, C10112 &lt;dbl&gt;, C10113 &lt;dbl&gt;, ...</code></pre>
+</div>
+<div id="pruning-the-adjacency-matrix" class="section level4">
+<h4>Pruning The Adjacency Matrix</h4>
+<p><img src="images/Pruning%20and%20Threshold.jpg" width="100%" style="display: block; margin: auto;" /></p>
+<div id="remove-customer-relationships-or-related-to-themselves" class="section level5">
+<h5>Remove customer relationships or related to themselves</h5>
+<pre class="r"><code>diag(customer_correlation_matrix) &lt;- 0
+customer_correlation_matrix %&gt;% as_tibble(rownames = &quot;CUST_ID&quot;)</code></pre>
+<pre><code>## # A tibble: 8,950 x 8,951
+##    CUST_ID  C10001  C10002  C10003  C10004  C10005 C10006  C10007  C10008 C10009
+##    &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;
+##  1 C10001   0       0.0842 -0.171   0.125   0.807   0.386 -0.193   0.0384 0.279 
+##  2 C10002   0.0842  0      -0.276   0.249   0.207  -0.360 -0.444  -0.469  0.0102
+##  3 C10003  -0.171  -0.276   0       0.0913  0.0823 -0.156  0.292  -0.0332 0.266 
+##  4 C10004   0.125   0.249   0.0913  0       0.0420 -0.345  0.222  -0.496  0.464 
+##  5 C10005   0.807   0.207   0.0823  0.0420  0       0.269 -0.221  -0.0653 0.434 
+##  6 C10006   0.386  -0.360  -0.156  -0.345   0.269   0     -0.271   0.696  0.185 
+##  7 C10007  -0.193  -0.444   0.292   0.222  -0.221  -0.271  0      -0.0878 0.214 
+##  8 C10008   0.0384 -0.469  -0.0332 -0.496  -0.0653  0.696 -0.0878  0      0.125 
+##  9 C10009   0.279   0.0102  0.266   0.464   0.434   0.185  0.214   0.125  0     
+## 10 C10010  -0.0500  0.135   0.226   0.860  -0.168  -0.390  0.433  -0.440  0.508 
+## # ... with 8,940 more rows, and 8,941 more variables: C10010 &lt;dbl&gt;,
+## #   C10011 &lt;dbl&gt;, C10012 &lt;dbl&gt;, C10013 &lt;dbl&gt;, C10014 &lt;dbl&gt;, C10015 &lt;dbl&gt;,
+## #   C10016 &lt;dbl&gt;, C10017 &lt;dbl&gt;, C10018 &lt;dbl&gt;, C10019 &lt;dbl&gt;, C10020 &lt;dbl&gt;,
+## #   C10021 &lt;dbl&gt;, C10022 &lt;dbl&gt;, C10023 &lt;dbl&gt;, C10024 &lt;dbl&gt;, C10025 &lt;dbl&gt;,
+## #   C10026 &lt;dbl&gt;, C10027 &lt;dbl&gt;, C10028 &lt;dbl&gt;, C10029 &lt;dbl&gt;, C10030 &lt;dbl&gt;,
+## #   C10031 &lt;dbl&gt;, C10032 &lt;dbl&gt;, C10033 &lt;dbl&gt;, C10034 &lt;dbl&gt;, C10035 &lt;dbl&gt;,
+## #   C10036 &lt;dbl&gt;, C10037 &lt;dbl&gt;, C10038 &lt;dbl&gt;, C10039 &lt;dbl&gt;, C10040 &lt;dbl&gt;,
+## #   C10041 &lt;dbl&gt;, C10043 &lt;dbl&gt;, C10044 &lt;dbl&gt;, C10045 &lt;dbl&gt;, C10046 &lt;dbl&gt;,
+## #   C10047 &lt;dbl&gt;, C10048 &lt;dbl&gt;, C10049 &lt;dbl&gt;, C10050 &lt;dbl&gt;, C10051 &lt;dbl&gt;,
+## #   C10052 &lt;dbl&gt;, C10053 &lt;dbl&gt;, C10054 &lt;dbl&gt;, C10055 &lt;dbl&gt;, C10056 &lt;dbl&gt;,
+## #   C10057 &lt;dbl&gt;, C10058 &lt;dbl&gt;, C10059 &lt;dbl&gt;, C10060 &lt;dbl&gt;, C10061 &lt;dbl&gt;,
+## #   C10062 &lt;dbl&gt;, C10063 &lt;dbl&gt;, C10064 &lt;dbl&gt;, C10065 &lt;dbl&gt;, C10067 &lt;dbl&gt;,
+## #   C10068 &lt;dbl&gt;, C10069 &lt;dbl&gt;, C10070 &lt;dbl&gt;, C10071 &lt;dbl&gt;, C10072 &lt;dbl&gt;,
+## #   C10073 &lt;dbl&gt;, C10074 &lt;dbl&gt;, C10075 &lt;dbl&gt;, C10077 &lt;dbl&gt;, C10078 &lt;dbl&gt;,
+## #   C10079 &lt;dbl&gt;, C10080 &lt;dbl&gt;, C10081 &lt;dbl&gt;, C10082 &lt;dbl&gt;, C10083 &lt;dbl&gt;,
+## #   C10084 &lt;dbl&gt;, C10085 &lt;dbl&gt;, C10086 &lt;dbl&gt;, C10087 &lt;dbl&gt;, C10088 &lt;dbl&gt;,
+## #   C10089 &lt;dbl&gt;, C10090 &lt;dbl&gt;, C10092 &lt;dbl&gt;, C10093 &lt;dbl&gt;, C10094 &lt;dbl&gt;,
+## #   C10095 &lt;dbl&gt;, C10096 &lt;dbl&gt;, C10097 &lt;dbl&gt;, C10098 &lt;dbl&gt;, C10099 &lt;dbl&gt;,
+## #   C10100 &lt;dbl&gt;, C10101 &lt;dbl&gt;, C10102 &lt;dbl&gt;, C10103 &lt;dbl&gt;, C10104 &lt;dbl&gt;,
+## #   C10105 &lt;dbl&gt;, C10106 &lt;dbl&gt;, C10107 &lt;dbl&gt;, C10108 &lt;dbl&gt;, C10109 &lt;dbl&gt;,
+## #   C10110 &lt;dbl&gt;, C10111 &lt;dbl&gt;, C10112 &lt;dbl&gt;, C10113 &lt;dbl&gt;, ...</code></pre>
+</div>
+<div id="remove-duplicate-relationships" class="section level5">
+<h5>Remove duplicate relationships</h5>
+<pre class="r"><code>customer_correlation_matrix[upper.tri(customer_correlation_matrix)] &lt;- 0
+customer_correlation_matrix %&gt;% as_tibble(rownames = &quot;CUST_ID&quot;)</code></pre>
+<pre><code>## # A tibble: 8,950 x 8,951
+##    CUST_ID  C10001  C10002  C10003  C10004  C10005 C10006  C10007 C10008 C10009
+##    &lt;chr&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+##  1 C10001   0       0       0       0       0       0      0       0      0    
+##  2 C10002   0.0842  0       0       0       0       0      0       0      0    
+##  3 C10003  -0.171  -0.276   0       0       0       0      0       0      0    
+##  4 C10004   0.125   0.249   0.0913  0       0       0      0       0      0    
+##  5 C10005   0.807   0.207   0.0823  0.0420  0       0      0       0      0    
+##  6 C10006   0.386  -0.360  -0.156  -0.345   0.269   0      0       0      0    
+##  7 C10007  -0.193  -0.444   0.292   0.222  -0.221  -0.271  0       0      0    
+##  8 C10008   0.0384 -0.469  -0.0332 -0.496  -0.0653  0.696 -0.0878  0      0    
+##  9 C10009   0.279   0.0102  0.266   0.464   0.434   0.185  0.214   0.125  0    
+## 10 C10010  -0.0500  0.135   0.226   0.860  -0.168  -0.390  0.433  -0.440  0.508
+## # ... with 8,940 more rows, and 8,941 more variables: C10010 &lt;dbl&gt;,
+## #   C10011 &lt;dbl&gt;, C10012 &lt;dbl&gt;, C10013 &lt;dbl&gt;, C10014 &lt;dbl&gt;, C10015 &lt;dbl&gt;,
+## #   C10016 &lt;dbl&gt;, C10017 &lt;dbl&gt;, C10018 &lt;dbl&gt;, C10019 &lt;dbl&gt;, C10020 &lt;dbl&gt;,
+## #   C10021 &lt;dbl&gt;, C10022 &lt;dbl&gt;, C10023 &lt;dbl&gt;, C10024 &lt;dbl&gt;, C10025 &lt;dbl&gt;,
+## #   C10026 &lt;dbl&gt;, C10027 &lt;dbl&gt;, C10028 &lt;dbl&gt;, C10029 &lt;dbl&gt;, C10030 &lt;dbl&gt;,
+## #   C10031 &lt;dbl&gt;, C10032 &lt;dbl&gt;, C10033 &lt;dbl&gt;, C10034 &lt;dbl&gt;, C10035 &lt;dbl&gt;,
+## #   C10036 &lt;dbl&gt;, C10037 &lt;dbl&gt;, C10038 &lt;dbl&gt;, C10039 &lt;dbl&gt;, C10040 &lt;dbl&gt;,
+## #   C10041 &lt;dbl&gt;, C10043 &lt;dbl&gt;, C10044 &lt;dbl&gt;, C10045 &lt;dbl&gt;, C10046 &lt;dbl&gt;,
+## #   C10047 &lt;dbl&gt;, C10048 &lt;dbl&gt;, C10049 &lt;dbl&gt;, C10050 &lt;dbl&gt;, C10051 &lt;dbl&gt;,
+## #   C10052 &lt;dbl&gt;, C10053 &lt;dbl&gt;, C10054 &lt;dbl&gt;, C10055 &lt;dbl&gt;, C10056 &lt;dbl&gt;,
+## #   C10057 &lt;dbl&gt;, C10058 &lt;dbl&gt;, C10059 &lt;dbl&gt;, C10060 &lt;dbl&gt;, C10061 &lt;dbl&gt;,
+## #   C10062 &lt;dbl&gt;, C10063 &lt;dbl&gt;, C10064 &lt;dbl&gt;, C10065 &lt;dbl&gt;, C10067 &lt;dbl&gt;,
+## #   C10068 &lt;dbl&gt;, C10069 &lt;dbl&gt;, C10070 &lt;dbl&gt;, C10071 &lt;dbl&gt;, C10072 &lt;dbl&gt;,
+## #   C10073 &lt;dbl&gt;, C10074 &lt;dbl&gt;, C10075 &lt;dbl&gt;, C10077 &lt;dbl&gt;, C10078 &lt;dbl&gt;,
+## #   C10079 &lt;dbl&gt;, C10080 &lt;dbl&gt;, C10081 &lt;dbl&gt;, C10082 &lt;dbl&gt;, C10083 &lt;dbl&gt;,
+## #   C10084 &lt;dbl&gt;, C10085 &lt;dbl&gt;, C10086 &lt;dbl&gt;, C10087 &lt;dbl&gt;, C10088 &lt;dbl&gt;,
+## #   C10089 &lt;dbl&gt;, C10090 &lt;dbl&gt;, C10092 &lt;dbl&gt;, C10093 &lt;dbl&gt;, C10094 &lt;dbl&gt;,
+## #   C10095 &lt;dbl&gt;, C10096 &lt;dbl&gt;, C10097 &lt;dbl&gt;, C10098 &lt;dbl&gt;, C10099 &lt;dbl&gt;,
+## #   C10100 &lt;dbl&gt;, C10101 &lt;dbl&gt;, C10102 &lt;dbl&gt;, C10103 &lt;dbl&gt;, C10104 &lt;dbl&gt;,
+## #   C10105 &lt;dbl&gt;, C10106 &lt;dbl&gt;, C10107 &lt;dbl&gt;, C10108 &lt;dbl&gt;, C10109 &lt;dbl&gt;,
+## #   C10110 &lt;dbl&gt;, C10111 &lt;dbl&gt;, C10112 &lt;dbl&gt;, C10113 &lt;dbl&gt;, ...</code></pre>
+</div>
+<div id="prune-relationships" class="section level5">
+<h5>Prune relationships</h5>
+<p>Subsets of most influential customers.</p>
+<pre class="r"><code>edge_limit &lt;- 0.99   # Below 0.99 gets zero values
+customer_correlation_matrix[customer_correlation_matrix &lt; edge_limit] &lt;- 0
+customer_correlation_matrix %&gt;% as_tibble(rownames = &quot;CUST_ID&quot;)</code></pre>
+<pre><code>## # A tibble: 8,950 x 8,951
+##    CUST_ID C10001 C10002 C10003 C10004 C10005 C10006 C10007 C10008 C10009 C10010
+##    &lt;chr&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+##  1 C10001       0      0      0      0      0      0      0      0      0      0
+##  2 C10002       0      0      0      0      0      0      0      0      0      0
+##  3 C10003       0      0      0      0      0      0      0      0      0      0
+##  4 C10004       0      0      0      0      0      0      0      0      0      0
+##  5 C10005       0      0      0      0      0      0      0      0      0      0
+##  6 C10006       0      0      0      0      0      0      0      0      0      0
+##  7 C10007       0      0      0      0      0      0      0      0      0      0
+##  8 C10008       0      0      0      0      0      0      0      0      0      0
+##  9 C10009       0      0      0      0      0      0      0      0      0      0
+## 10 C10010       0      0      0      0      0      0      0      0      0      0
+## # ... with 8,940 more rows, and 8,940 more variables: C10011 &lt;dbl&gt;,
+## #   C10012 &lt;dbl&gt;, C10013 &lt;dbl&gt;, C10014 &lt;dbl&gt;, C10015 &lt;dbl&gt;, C10016 &lt;dbl&gt;,
+## #   C10017 &lt;dbl&gt;, C10018 &lt;dbl&gt;, C10019 &lt;dbl&gt;, C10020 &lt;dbl&gt;, C10021 &lt;dbl&gt;,
+## #   C10022 &lt;dbl&gt;, C10023 &lt;dbl&gt;, C10024 &lt;dbl&gt;, C10025 &lt;dbl&gt;, C10026 &lt;dbl&gt;,
+## #   C10027 &lt;dbl&gt;, C10028 &lt;dbl&gt;, C10029 &lt;dbl&gt;, C10030 &lt;dbl&gt;, C10031 &lt;dbl&gt;,
+## #   C10032 &lt;dbl&gt;, C10033 &lt;dbl&gt;, C10034 &lt;dbl&gt;, C10035 &lt;dbl&gt;, C10036 &lt;dbl&gt;,
+## #   C10037 &lt;dbl&gt;, C10038 &lt;dbl&gt;, C10039 &lt;dbl&gt;, C10040 &lt;dbl&gt;, C10041 &lt;dbl&gt;,
+## #   C10043 &lt;dbl&gt;, C10044 &lt;dbl&gt;, C10045 &lt;dbl&gt;, C10046 &lt;dbl&gt;, C10047 &lt;dbl&gt;,
+## #   C10048 &lt;dbl&gt;, C10049 &lt;dbl&gt;, C10050 &lt;dbl&gt;, C10051 &lt;dbl&gt;, C10052 &lt;dbl&gt;,
+## #   C10053 &lt;dbl&gt;, C10054 &lt;dbl&gt;, C10055 &lt;dbl&gt;, C10056 &lt;dbl&gt;, C10057 &lt;dbl&gt;,
+## #   C10058 &lt;dbl&gt;, C10059 &lt;dbl&gt;, C10060 &lt;dbl&gt;, C10061 &lt;dbl&gt;, C10062 &lt;dbl&gt;,
+## #   C10063 &lt;dbl&gt;, C10064 &lt;dbl&gt;, C10065 &lt;dbl&gt;, C10067 &lt;dbl&gt;, C10068 &lt;dbl&gt;,
+## #   C10069 &lt;dbl&gt;, C10070 &lt;dbl&gt;, C10071 &lt;dbl&gt;, C10072 &lt;dbl&gt;, C10073 &lt;dbl&gt;,
+## #   C10074 &lt;dbl&gt;, C10075 &lt;dbl&gt;, C10077 &lt;dbl&gt;, C10078 &lt;dbl&gt;, C10079 &lt;dbl&gt;,
+## #   C10080 &lt;dbl&gt;, C10081 &lt;dbl&gt;, C10082 &lt;dbl&gt;, C10083 &lt;dbl&gt;, C10084 &lt;dbl&gt;,
+## #   C10085 &lt;dbl&gt;, C10086 &lt;dbl&gt;, C10087 &lt;dbl&gt;, C10088 &lt;dbl&gt;, C10089 &lt;dbl&gt;,
+## #   C10090 &lt;dbl&gt;, C10092 &lt;dbl&gt;, C10093 &lt;dbl&gt;, C10094 &lt;dbl&gt;, C10095 &lt;dbl&gt;,
+## #   C10096 &lt;dbl&gt;, C10097 &lt;dbl&gt;, C10098 &lt;dbl&gt;, C10099 &lt;dbl&gt;, C10100 &lt;dbl&gt;,
+## #   C10101 &lt;dbl&gt;, C10102 &lt;dbl&gt;, C10103 &lt;dbl&gt;, C10104 &lt;dbl&gt;, C10105 &lt;dbl&gt;,
+## #   C10106 &lt;dbl&gt;, C10107 &lt;dbl&gt;, C10108 &lt;dbl&gt;, C10109 &lt;dbl&gt;, C10110 &lt;dbl&gt;,
+## #   C10111 &lt;dbl&gt;, C10112 &lt;dbl&gt;, C10113 &lt;dbl&gt;, C10114 &lt;dbl&gt;, ...</code></pre>
+<pre class="r"><code>sum(customer_correlation_matrix &gt; 0)</code></pre>
+<pre><code>## [1] 10703</code></pre>
+</div>
+<div id="filter-relationships-to-subset-of-customers-that-have-relationships" class="section level5">
+<h5>Filter relationships to subset of customers that have relationships</h5>
+<pre class="r"><code>customer_correlation_matrix &lt;- customer_correlation_matrix[rowSums(customer_correlation_matrix) &gt; 0, colSums(customer_correlation_matrix) &gt; 0] 
+customer_correlation_matrix %&gt;% dim()</code></pre>
+<pre><code>## [1] 1992 1991</code></pre>
+<pre class="r"><code>customer_correlation_matrix %&gt;% as_tibble(rownames = &quot;CUST_ID&quot;)</code></pre>
+<pre><code>## # A tibble: 1,992 x 1,992
+##    CUST_ID C10003 C10005 C10008 C10011 C10015 C10017 C10021 C10026 C10027 C10028
+##    &lt;chr&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+##  1 C10102   0          0      0  0          0      0      0      0      0  0    
+##  2 C10166   0          0      0  0          0      0      0      0      0  0    
+##  3 C10174   0          0      0  0.997      0      0      0      0      0  0    
+##  4 C10213   0          0      0  0          0      0      0      0      0  0    
+##  5 C10256   0          0      0  0          0      0      0      0      0  0.996
+##  6 C10278   0.996      0      0  0          0      0      0      0      0  0    
+##  7 C10300   0          0      0  0          0      0      0      0      0  0    
+##  8 C10321   0          0      0  0          0      0      0      0      0  0    
+##  9 C10371   0          0      0  0          0      0      0      0      0  0    
+## 10 C10391   0          0      0  0          0      0      0      0      0  0    
+## # ... with 1,982 more rows, and 1,981 more variables: C10034 &lt;dbl&gt;,
+## #   C10036 &lt;dbl&gt;, C10044 &lt;dbl&gt;, C10045 &lt;dbl&gt;, C10049 &lt;dbl&gt;, C10050 &lt;dbl&gt;,
+## #   C10054 &lt;dbl&gt;, C10063 &lt;dbl&gt;, C10065 &lt;dbl&gt;, C10069 &lt;dbl&gt;, C10070 &lt;dbl&gt;,
+## #   C10082 &lt;dbl&gt;, C10087 &lt;dbl&gt;, C10089 &lt;dbl&gt;, C10093 &lt;dbl&gt;, C10094 &lt;dbl&gt;,
+## #   C10097 &lt;dbl&gt;, C10100 &lt;dbl&gt;, C10103 &lt;dbl&gt;, C10104 &lt;dbl&gt;, C10109 &lt;dbl&gt;,
+## #   C10111 &lt;dbl&gt;, C10112 &lt;dbl&gt;, C10118 &lt;dbl&gt;, C10123 &lt;dbl&gt;, C10124 &lt;dbl&gt;,
+## #   C10128 &lt;dbl&gt;, C10134 &lt;dbl&gt;, C10138 &lt;dbl&gt;, C10140 &lt;dbl&gt;, C10158 &lt;dbl&gt;,
+## #   C10165 &lt;dbl&gt;, C10166 &lt;dbl&gt;, C10167 &lt;dbl&gt;, C10170 &lt;dbl&gt;, C10171 &lt;dbl&gt;,
+## #   C10174 &lt;dbl&gt;, C10181 &lt;dbl&gt;, C10187 &lt;dbl&gt;, C10189 &lt;dbl&gt;, C10197 &lt;dbl&gt;,
+## #   C10198 &lt;dbl&gt;, C10207 &lt;dbl&gt;, C10209 &lt;dbl&gt;, C10213 &lt;dbl&gt;, C10223 &lt;dbl&gt;,
+## #   C10234 &lt;dbl&gt;, C10239 &lt;dbl&gt;, C10242 &lt;dbl&gt;, C10244 &lt;dbl&gt;, C10256 &lt;dbl&gt;,
+## #   C10257 &lt;dbl&gt;, C10260 &lt;dbl&gt;, C10263 &lt;dbl&gt;, C10286 &lt;dbl&gt;, C10287 &lt;dbl&gt;,
+## #   C10288 &lt;dbl&gt;, C10297 &lt;dbl&gt;, C10300 &lt;dbl&gt;, C10304 &lt;dbl&gt;, C10305 &lt;dbl&gt;,
+## #   C10309 &lt;dbl&gt;, C10321 &lt;dbl&gt;, C10324 &lt;dbl&gt;, C10327 &lt;dbl&gt;, C10328 &lt;dbl&gt;,
+## #   C10329 &lt;dbl&gt;, C10330 &lt;dbl&gt;, C10333 &lt;dbl&gt;, C10334 &lt;dbl&gt;, C10336 &lt;dbl&gt;,
+## #   C10338 &lt;dbl&gt;, C10341 &lt;dbl&gt;, C10347 &lt;dbl&gt;, C10349 &lt;dbl&gt;, C10357 &lt;dbl&gt;,
+## #   C10360 &lt;dbl&gt;, C10361 &lt;dbl&gt;, C10365 &lt;dbl&gt;, C10371 &lt;dbl&gt;, C10373 &lt;dbl&gt;,
+## #   C10380 &lt;dbl&gt;, C10384 &lt;dbl&gt;, C10386 &lt;dbl&gt;, C10391 &lt;dbl&gt;, C10396 &lt;dbl&gt;,
+## #   C10399 &lt;dbl&gt;, C10400 &lt;dbl&gt;, C10402 &lt;dbl&gt;, C10409 &lt;dbl&gt;, C10415 &lt;dbl&gt;,
+## #   C10422 &lt;dbl&gt;, C10429 &lt;dbl&gt;, C10436 &lt;dbl&gt;, C10443 &lt;dbl&gt;, C10444 &lt;dbl&gt;,
+## #   C10445 &lt;dbl&gt;, C10454 &lt;dbl&gt;, C10463 &lt;dbl&gt;, C10466 &lt;dbl&gt;, ...</code></pre>
+</div>
+<div id="convert-to-long-tibble-with-from-to-column-relating-customers" class="section level5">
+<h5>Convert to Long Tibble with From &amp; To Column Relating Customers</h5>
+<pre class="r"><code>customer_relationship_tbl &lt;- customer_correlation_matrix %&gt;%
+    as_tibble(rownames = &quot;from&quot;) %&gt;%
+    gather(key = &quot;to&quot;, value = &quot;weight&quot;, -from) %&gt;%
+    filter(weight &gt; 0)
+
+customer_relationship_tbl</code></pre>
+<pre><code>## # A tibble: 10,703 x 3
+##    from   to     weight
+##    &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;
+##  1 C10278 C10003  0.996
+##  2 C10962 C10005  0.991
+##  3 C11104 C10005  0.992
+##  4 C12740 C10005  0.991
+##  5 C13779 C10005  0.990
+##  6 C14513 C10005  0.995
+##  7 C14737 C10005  0.994
+##  8 C15919 C10005  0.993
+##  9 C16180 C10005  0.997
+## 10 C16961 C10005  0.994
+## # ... with 10,693 more rows</code></pre>
+</div>
+<div id="convert-to-function-for-dynamic-filtering-of-edge-limit" class="section level5">
+<h5>Convert to Function for Dynamic Filtering of Edge Limit</h5>
+<pre class="r"><code>prep_corr_matrix_for_tbl_graph &lt;- function(correlation_matrix, edge_limit = 0.9999) {
+    
+    diag(correlation_matrix) &lt;- 0
+    
+    correlation_matrix[upper.tri(correlation_matrix)] &lt;- 0
+
+    correlation_matrix[correlation_matrix &lt; edge_limit] &lt;- 0
+    
+    correlation_matrix &lt;- correlation_matrix[rowSums(correlation_matrix) &gt; 0, colSums(correlation_matrix) &gt; 0] 
+    
+    correlation_matrix %&gt;%
+        as_tibble(rownames = &quot;from&quot;) %&gt;%
+        gather(key = &quot;to&quot;, value = &quot;weight&quot;, -from) %&gt;%
+        filter(weight &gt; 0)
+
+}
+
+prep_corr_matrix_for_tbl_graph(customer_correlation_matrix, edge_limit = 0.99)</code></pre>
+<pre><code>## # A tibble: 7,178 x 3
+##    from   to     weight
+##    &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;
+##  1 C10278 C10003  0.996
+##  2 C10962 C10005  0.991
+##  3 C11104 C10005  0.992
+##  4 C12740 C10005  0.991
+##  5 C13779 C10005  0.990
+##  6 C14513 C10005  0.995
+##  7 C14737 C10005  0.994
+##  8 C15919 C10005  0.993
+##  9 C16180 C10005  0.997
+## 10 C16961 C10005  0.994
+## # ... with 7,168 more rows</code></pre>
+</div>
+</div>
+</div>
+<div id="network-visualization" class="section level3">
+<h3>Network Visualization</h3>
+<pre class="r"><code>customer_correlation_matrix %&gt;%
+    
+    prep_corr_matrix_for_tbl_graph(edge_limit = 0.997) %&gt;%
+    
+    as_tbl_graph(directed = FALSE) %&gt;%
+    
+    ggraph(layout = &quot;kk&quot;) +
+    geom_edge_link(alpha = 0.5, color = palette_light()[&quot;blue&quot;]) +
+    geom_node_point(alpha = 0.5, color = palette_light()[&quot;blue&quot;]) +
+    theme_graph(background = &quot;white&quot;)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-21-1.png" width="576" /></p>
+<div id="nodes-and-edges" class="section level4">
+<h4>Nodes and Edges</h4>
+<p><img src="images/Nodes%20and%20Edges.jpg" width="100%" style="display: block; margin: auto;" /></p>
+</div>
+<div id="graph-manipulation" class="section level4">
+<h4>Graph Manipulation</h4>
+<pre class="r"><code>customer_tbl_graph &lt;- customer_correlation_matrix %&gt;%
+    prep_corr_matrix_for_tbl_graph(edge_limit = 0.997) %&gt;%
+    as_tbl_graph(directed = FALSE)
+
+customer_tbl_graph</code></pre>
+<pre><code>## # A tbl_graph: 890 nodes and 1502 edges
+## #
+## # An undirected simple graph with 213 components
+## #
+## # Node Data: 890 x 1 (active)
+##   name  
+##   &lt;chr&gt; 
+## 1 C16180
+## 2 C17657
+## 3 C14958
+## 4 C11181
+## 5 C12206
+## 6 C13649
+## # ... with 884 more rows
+## #
+## # Edge Data: 1,502 x 3
+##    from    to weight
+##   &lt;int&gt; &lt;int&gt;  &lt;dbl&gt;
+## 1     1   543  0.997
+## 2     2   543  0.998
+## 3     3   544  0.999
+## # ... with 1,499 more rows</code></pre>
+</div>
+<div id="ranking-nodes---rank-by-topological-traits-find-out-which-customers-are-the-most-important-vs-the-other-customers" class="section level4">
+<h4>Ranking Nodes - Rank by topological traits (Find out which customers are the most important vs the other customers)</h4>
+<pre class="r"><code>customer_tbl_graph %&gt;%
+    activate(nodes) %&gt;%
+    mutate(node_rank = node_rank_traveller()) %&gt;%
+    arrange(node_rank)</code></pre>
+<pre><code>## # A tbl_graph: 890 nodes and 1502 edges
+## #
+## # An undirected simple graph with 213 components
+## #
+## # Node Data: 890 x 2 (active)
+##   name   node_rank
+##   &lt;chr&gt;      &lt;int&gt;
+## 1 C14001         1
+## 2 C10045         2
+## 3 C16928         3
+## 4 C18807         4
+## 5 C16688         5
+## 6 C13730         6
+## # ... with 884 more rows
+## #
+## # Edge Data: 1,502 x 3
+##    from    to weight
+##   &lt;int&gt; &lt;int&gt;  &lt;dbl&gt;
+## 1   681   682  0.997
+## 2   680   681  0.998
+## 3   357   358  0.999
+## # ... with 1,499 more rows</code></pre>
+</div>
+<div id="centrality---number-of-edges-going-inout-of-node-the-node-with-highest-number-of-edges-is-the-most-important" class="section level4">
+<h4>Centrality - Number of edges going in/out of node (The node with highest number of edges is the most important)</h4>
+<pre class="r"><code>customer_tbl_graph %&gt;%
+    activate(nodes) %&gt;%
+    mutate(neighbors = centrality_degree()) %&gt;%
+    arrange(desc(neighbors))</code></pre>
+<pre><code>## # A tbl_graph: 890 nodes and 1502 edges
+## #
+## # An undirected simple graph with 213 components
+## #
+## # Node Data: 890 x 2 (active)
+##   name   neighbors
+##   &lt;chr&gt;      &lt;dbl&gt;
+## 1 C18341        37
+## 2 C18363        26
+## 3 C18811        25
+## 4 C18913        25
+## 5 C18271        24
+## 6 C16626        23
+## # ... with 884 more rows
+## #
+## # Edge Data: 1,502 x 3
+##    from    to weight
+##   &lt;int&gt; &lt;int&gt;  &lt;dbl&gt;
+## 1   241   402  0.997
+## 2   242   402  0.998
+## 3   470   688  0.999
+## # ... with 1,499 more rows</code></pre>
+</div>
+<div id="grouping-nodes-clustering" class="section level4">
+<h4>Grouping Nodes (Clustering)</h4>
+<pre class="r"><code>grouped_tbl_graph &lt;- customer_tbl_graph %&gt;%
+    activate(nodes) %&gt;%
+    mutate(neighbors = centrality_degree()) %&gt;%
+    
+    mutate(group = group_components()) %&gt;%
+    
+    arrange(desc(neighbors)) %&gt;%
+    mutate(group_lump = group %&gt;% as_factor() %&gt;% fct_lump(n = 5))
+
+grouped_tbl_graph %&gt;%
+    ggraph(layout = &quot;kk&quot;) +
+    geom_edge_link(alpha = 0.5) +
+    geom_node_point(aes(color = group_lump), alpha = 0.5, size = 3) +
+    
+    theme_graph() +
+    scale_color_tq(theme = &quot;light&quot;) +
+    theme(legend.position = &quot;bottom&quot;) +
+    labs(title = &quot;Customer Network Detection&quot;)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-26-1.png" width="576" /></p>
+</div>
+</div>
+<div id="community-analysis" class="section level3">
+<h3>Community Analysis</h3>
+<p>Join Communities and Inspect Key Features</p>
+<pre class="r"><code>credit_card_group_tbl &lt;- credit_card_tbl %&gt;%
+    left_join(as_tibble(grouped_tbl_graph), by = c(&quot;CUST_ID&quot; = &quot;name&quot;)) %&gt;%
+    select(group_lump, CUST_ID, everything()) %&gt;%
+    filter(!is.na(group_lump))
+
+credit_card_group_tbl %&gt;% glimpse()</code></pre>
+<pre><code>## Rows: 890
+## Columns: 21
+## $ group_lump                       &lt;fct&gt; Other, Other, Other, 2, 2, 1, Othe...
+## $ CUST_ID                          &lt;chr&gt; &quot;C10005&quot;, &quot;C10011&quot;, &quot;C10015&quot;, &quot;C10...
+## $ BALANCE                          &lt;dbl&gt; 817.714335, 1293.124939, 2772.7727...
+## $ BALANCE_FREQUENCY                &lt;dbl&gt; 1.000000, 1.000000, 1.000000, 1.00...
+## $ PURCHASES                        &lt;dbl&gt; 16.00, 920.12, 0.00, 399.60, 233.2...
+## $ ONEOFF_PURCHASES                 &lt;dbl&gt; 16.00, 0.00, 0.00, 0.00, 0.00, 0.0...
+## $ INSTALLMENTS_PURCHASES           &lt;dbl&gt; 0.00, 920.12, 0.00, 399.60, 233.28...
+## $ CASH_ADVANCE                     &lt;dbl&gt; 0.00000, 0.00000, 346.81139, 0.000...
+## $ PURCHASES_FREQUENCY              &lt;dbl&gt; 0.083333, 1.000000, 0.000000, 1.00...
+## $ ONEOFF_PURCHASES_FREQUENCY       &lt;dbl&gt; 0.083333, 0.000000, 0.000000, 0.00...
+## $ PURCHASES_INSTALLMENTS_FREQUENCY &lt;dbl&gt; 0.000000, 1.000000, 0.000000, 1.00...
+## $ CASH_ADVANCE_FREQUENCY           &lt;dbl&gt; 0.000000, 0.000000, 0.083333, 0.00...
+## $ CASH_ADVANCE_TRX                 &lt;dbl&gt; 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 4...
+## $ PURCHASES_TRX                    &lt;dbl&gt; 1, 12, 0, 12, 12, 0, 0, 1, 0, 0, 3...
+## $ CREDIT_LIMIT                     &lt;dbl&gt; 1200, 1200, 3000, 3000, 1000, 1800...
+## $ PAYMENTS                         &lt;dbl&gt; 678.33476, 1083.30101, 805.64797, ...
+## $ MINIMUM_PAYMENTS                 &lt;dbl&gt; 244.79124, 2172.69776, 989.96287, ...
+## $ PRC_FULL_PAYMENT                 &lt;dbl&gt; 0.000000, 0.000000, 0.000000, 0.00...
+## $ TENURE                           &lt;dbl&gt; 12, 12, 12, 12, 12, 12, 12, 12, 8,...
+## $ neighbors                        &lt;dbl&gt; 2, 1, 5, 3, 17, 15, 1, 2, 1, 2, 1,...
+## $ group                            &lt;int&gt; 9, 84, 12, 2, 2, 1, 85, 6, 86, 41,...</code></pre>
+<pre class="r"><code>plot_density_by &lt;- function(data, col, group_focus = 1, ncol = 1) {
+    
+    col_expr &lt;- enquo(col)
+    
+    data %&gt;%
+        mutate(focus = as.character(group_lump)) %&gt;%
+        select(focus, everything()) %&gt;%
+        mutate(focus = ifelse(as.character(focus) == as.character(group_focus), 
+                                    &quot;1&quot;, &quot;Other&quot;)) %&gt;%
+        mutate(focus = as.factor(focus)) %&gt;%
+        
+        ggplot(aes(!! col_expr, fill = focus)) +
+        geom_density(alpha = 0.4) +
+        facet_wrap(~ focus, ncol = ncol) +
+        scale_fill_tq() +
+        theme_tq()
+}</code></pre>
+<div id="group-1." class="section level4">
+<h4>Group 1.</h4>
+<div id="by-balance" class="section level5">
+<h5><strong>By Balance</strong></h5>
+<p>For this first group we can see that every customers has bimodal and trimodal relationships but you can see that for group 1 everyone has pretty high balance compare to the spike vs the other. This categorizes the group 1 as they tend to have a higher balance.</p>
+<pre class="r"><code>credit_card_group_tbl %&gt;% plot_density_by(BALANCE, group_focus = 1)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-29-1.png" width="576" /></p>
+</div>
+<div id="by-min-payment" class="section level5">
+<h5><strong>By Min Payment</strong></h5>
+<pre class="r"><code>credit_card_group_tbl %&gt;% plot_density_by(MINIMUM_PAYMENTS, group_focus = 1)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-30-1.png" width="576" /></p>
+<pre class="r"><code>credit_card_group_tbl %&gt;% plot_density_by(log(MINIMUM_PAYMENTS), group_focus = 1)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-30-2.png" width="576" /></p>
+</div>
+<div id="cash-advance-frequency" class="section level5">
+<h5><strong>Cash Advance Frequency</strong></h5>
+<pre class="r"><code>credit_card_group_tbl %&gt;% plot_density_by(CASH_ADVANCE_FREQUENCY, group_focus = 1)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-31-1.png" width="576" /></p>
+</div>
+</div>
+<div id="group-2" class="section level4">
+<h4>Group 2</h4>
+<div id="by-balance-1" class="section level5">
+<h5><strong>By Balance</strong></h5>
+<pre class="r"><code>credit_card_group_tbl %&gt;% plot_density_by(BALANCE, group_focus = 2, ncol = 1)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-32-1.png" width="576" /></p>
+<pre class="r"><code>credit_card_group_tbl %&gt;% plot_density_by(log(BALANCE), group_focus = 2, ncol = 1)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-32-2.png" width="576" /></p>
+</div>
+<div id="by-min-payment-1" class="section level5">
+<h5><strong>By Min Payment</strong></h5>
+<pre class="r"><code>credit_card_group_tbl %&gt;% plot_density_by(MINIMUM_PAYMENTS, group_focus = 2)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-33-1.png" width="576" /></p>
+<pre class="r"><code>credit_card_group_tbl %&gt;% plot_density_by(log(MINIMUM_PAYMENTS), group_focus = 2)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-33-2.png" width="576" /></p>
+</div>
+<div id="cash-advance-frequency-1" class="section level5">
+<h5><strong>Cash Advance Frequency</strong></h5>
+<pre class="r"><code>credit_card_group_tbl %&gt;% plot_density_by(CASH_ADVANCE_FREQUENCY, group_focus = 2)</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-34-1.png" width="576" /></p>
+</div>
+</div>
+</div>
+<div id="h2o-and-lime" class="section level3">
+<h3>H2O and LIME</h3>
+<p>Predict and Explain Customer Segments.</p>
+<p><strong>H2O</strong> -Multi-class prediction with H2O AutoML -Training a model to detect which group each customer belongs to which group. <strong>LIME Explanation</strong> -ML Explanation of which features contribute to each class with LIME -Returns a function called explain_customer()</p>
+<pre class="r"><code>source(&quot;h2o_lime.R&quot;)</code></pre>
+<pre><code>## 
+## H2O is not running yet, starting it now...
+## 
+## Note:  In case of errors look at the following log files:
+##     C:\Users\Apple\AppData\Local\Temp\RtmpyKhEA7\filea7c74154fc9/h2o_Apple_started_from_r.out
+##     C:\Users\Apple\AppData\Local\Temp\RtmpyKhEA7\filea7c36525d49/h2o_Apple_started_from_r.err
+## 
+## 
+## Starting H2O JVM and connecting: ... Connection successful!
+## 
+## R is connected to the H2O cluster: 
+##     H2O cluster uptime:         19 seconds 271 milliseconds 
+##     H2O cluster timezone:       Asia/Singapore 
+##     H2O data parsing timezone:  UTC 
+##     H2O cluster version:        3.30.1.3 
+##     H2O cluster version age:    5 months and 15 days !!! 
+##     H2O cluster name:           H2O_started_from_R_Apple_rqh772 
+##     H2O cluster total nodes:    1 
+##     H2O cluster total memory:   1.96 GB 
+##     H2O cluster total cores:    4 
+##     H2O cluster allowed cores:  4 
+##     H2O cluster healthy:        TRUE 
+##     H2O Connection ip:          localhost 
+##     H2O Connection port:        54321 
+##     H2O Connection proxy:       NA 
+##     H2O Internal Security:      FALSE 
+##     H2O API Extensions:         Amazon S3, Algos, AutoML, Core V3, TargetEncoder, Core V4 
+##     R Version:                  R version 4.0.2 (2020-06-22) 
+## 
+## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%
+## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |=                                                                     |   1%
+  |                                                                            
+  |==================================================================    |  95%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+<pre class="r"><code>credit_card_group_tbl</code></pre>
+<pre><code>## # A tibble: 890 x 21
+##    group_lump CUST_ID BALANCE BALANCE_FREQUEN~ PURCHASES ONEOFF_PURCHASES
+##    &lt;fct&gt;      &lt;chr&gt;     &lt;dbl&gt;            &lt;dbl&gt;     &lt;dbl&gt;            &lt;dbl&gt;
+##  1 Other      C10005     818.            1          16               16  
+##  2 Other      C10011    1293.            1         920.               0  
+##  3 Other      C10015    2773.            1           0                0  
+##  4 2          C10026     170.            1         400.               0  
+##  5 2          C10028     126.            1         233.               0  
+##  6 1          C10036    1656.            1           0                0  
+##  7 Other      C10045    1361.            1           0                0  
+##  8 Other      C10063    1556.            1          66.2             66.2
+##  9 Other      C10069     810.            0.875       0                0  
+## 10 Other      C10082    1206.            1           0                0  
+## # ... with 880 more rows, and 15 more variables: INSTALLMENTS_PURCHASES &lt;dbl&gt;,
+## #   CASH_ADVANCE &lt;dbl&gt;, PURCHASES_FREQUENCY &lt;dbl&gt;,
+## #   ONEOFF_PURCHASES_FREQUENCY &lt;dbl&gt;, PURCHASES_INSTALLMENTS_FREQUENCY &lt;dbl&gt;,
+## #   CASH_ADVANCE_FREQUENCY &lt;dbl&gt;, CASH_ADVANCE_TRX &lt;dbl&gt;, PURCHASES_TRX &lt;dbl&gt;,
+## #   CREDIT_LIMIT &lt;dbl&gt;, PAYMENTS &lt;dbl&gt;, MINIMUM_PAYMENTS &lt;dbl&gt;,
+## #   PRC_FULL_PAYMENT &lt;dbl&gt;, TENURE &lt;dbl&gt;, neighbors &lt;dbl&gt;, group &lt;int&gt;</code></pre>
+<pre class="r"><code>h2o.predict(h2o_model, newdata = as.h2o(credit_card_group_tbl)) %&gt;%
+  as_tibble()</code></pre>
+<pre><code>## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%
+## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+<pre><code>## # A tibble: 890 x 7
+##    predict     p1        p2        p3    p4       p5   Other
+##    &lt;fct&gt;    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;
+##  1 Other   0      0.000101  0.0000782     0 0.000428 0.999  
+##  2 Other   0      0         0.0000782     0 0        1.00   
+##  3 Other   0.0226 0.0000985 0.0000764     0 0.000419 0.977  
+##  4 2       0      0.944     0.0000782     0 0        0.0556 
+##  5 2       0      1.00      0.0000782     0 0.000262 0      
+##  6 1       0.998  0.000102  0.0000788     0 0.000432 0.00124
+##  7 Other   0.0999 0.0000907 0.0000704     0 0.000385 0.900  
+##  8 Other   0      0.000101  0             0 0.000428 0.999  
+##  9 Other   0.0526 0.0000955 0.0000741     0 0.000406 0.947  
+## 10 Other   0.136  0.0000871 0.0000676     0 0.000370 0.864  
+## # ... with 880 more rows</code></pre>
+<div id="explain-why-customers-6-belong-to-communities." class="section level4">
+<h4><strong>Explain why customers 6 belong to communities</strong>.</h4>
+<pre class="r"><code>explain_customer(6)</code></pre>
+<pre><code>## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%
+## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+<p><img src="Customer-Community-Detection_files/figure-html/unnamed-chunk-37-1.png" width="576" /></p>
+</div>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
